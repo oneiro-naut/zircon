@@ -9,11 +9,11 @@ int main(int argc,char* argv[])
     Window window("Zircon",WIN_H,WIN_W);
     Game game(window);
 
-    while(window.isClosed()==false && game.isOver()== false)
+    while(window.isClosed()==false )
     {
         game.pollEvents();
         game.update();
-        if(game.isOver()== false)game.draw();
+        game.draw();
 
     }
     

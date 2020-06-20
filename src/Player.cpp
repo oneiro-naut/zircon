@@ -3,7 +3,8 @@
 
 Player::Player(Game& g,int l,SDL_Texture* sprt):Object(g,l,sprt)
 {
-    
+    pbul_timer = 0;
+    shield_timer = 0;
     type = PLAYER;
     shield = false;
     _x = 0;
@@ -54,19 +55,19 @@ void Player::updateByKey()
     setvY(0);
     if(keyarr[SDL_SCANCODE_C]==1)
     {
-        _vy += 0.08;
+        _vy += 5;
     }
     if(keyarr[SDL_SCANCODE_A]==1)
     {
-        _vy += -0.08;
+        _vy += -5;
     }
     if(keyarr[SDL_SCANCODE_D]==1)
     {
-        _vx += 0.08;
+        _vx += 5;
     }
     if(keyarr[SDL_SCANCODE_Z]==1)
     {
-        _vx += -0.08;
+        _vx += -5;
     }    
     if(keyarr[SDL_SCANCODE_RCTRL]==1)
     {
@@ -101,10 +102,10 @@ void Player::updatePosition()
 
 void Player::fireBullet()
 {
-    static Uint32 bullet_timer = 0;
-    if(bullet_timer==0||SDL_GetTicks()>bullet_timer)
+ 
+    if(pbul_timer==0||SDL_GetTicks()>pbul_timer)
     {
-        bullet_timer = SDL_GetTicks() + 200; // bullet generation delay in ms
+        pbul_timer = SDL_GetTicks() + 200; // bullet generation delay in ms
         //cout<<"player y = "<<_y<<"bullet y = "<<_y+(curr_frame.h/4)<<endl;
         game.genPBullet(_x+curr_frame.w-8,_y+(curr_frame.h/4));
     }
@@ -114,8 +115,7 @@ void Player::fireBullet()
 
 bool Player::shielded()
 {
-    static Uint32 shield_timer = 0;//can make it class member....Yes make it class member non static...static member in method is shared betwenn every obj of that class which sucks
-    if(shield){
+   if(shield){
     if(!shield_timer)
     {
         shield_timer = SDL_GetTicks() + 1000;//1s shield

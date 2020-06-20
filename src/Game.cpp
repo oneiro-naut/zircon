@@ -27,13 +27,35 @@ Game::Game(Window &pwin):pwindow(pwin)
 Game::~Game()
 {
     deleteTextures();
+
     cout<<"Destroying Game"<<endl;
+        //Close the font that was used
+    TTF_CloseFont( g_font );
+    
+    //Quit SDL_ttf
+    TTF_Quit();
 }
 
 void Game::updateScore(){
     score +=5;
     cout << "Current Score = "<<score<<endl;
 }
+
+
+void Game::showGameOver(char * winstat)
+{
+    renderText(winstat,gameend);
+}
+
+void Game::updateStatusText()
+{
+    char stat[100];
+    sprintf(stat,"Life : %d       Score: %d       Wave : %d",player->getLives(),score,wave);
+    renderText(stat,status);
+
+}
+
+
 
 void Game::updateEnemies()
 {
@@ -59,12 +81,23 @@ void Game::updateEnemies()
 
 void Game::update()
 {
+    if(state == OVER)
+    {
+
+        return;
+    }
+    game_timer = SDL_GetTicks();
+    char win[50]= "You Win!";
+    char lose[50] = "You lose!";
     
     if(isEnemiesEmpty())
     {
         endGame();
         cout<<"You win!"<<endl;
         cout<<"Game Over!"<<endl;
+        //char * win = "You Win!";
+        showGameOver(win);
+
         return;
     }
 
@@ -73,6 +106,9 @@ void Game::update()
         endGame();
         cout<<"You lose!"<<endl;
         cout<<"Game Over!"<<endl;
+        //char * lose = "You Lose!";
+        showGameOver(lose);
+
         return;
     }
 
@@ -87,6 +123,8 @@ void Game::update()
     //problem is how do we update collision without the position rect
     //maybe with a checkCollision(obj1,obj2) function;
     updateCollision();
+    updateStatusText();
+   
 }
 
 bool Game::isPlayerDead()
@@ -96,6 +134,7 @@ bool Game::isPlayerDead()
 void Game::endGame()
 {
     over = true;
+    //state = OVER;
     delete player;
     list <Object*> :: iterator it ;
     for(it = pbullets.begin();it !=pbullets.end();it++)
@@ -171,17 +210,24 @@ void Game::updateEBullets()
     }
 }
 
-
+bool Game::loadText()
+{
+       //Open the font
+    textColor = { 255, 255, 255};
+    g_font = TTF_OpenFont( "../assets/fonts/DejaVuSerif.ttf", 10 );
+    if(g_font!=nullptr)return true;
+    else return false;
+}
 
 void Game::genPBullet(float x,float y)
 {
-    Object* bullet = new Bullet(*this,PBULLET,x,y,0.1,0,charsheet);
+    Object* bullet = new Bullet(*this,PBULLET,x,y,8,0,charsheet);
     pbullets.push_back(bullet);
 }
 
 void Game::genEBullet(float x,float y)
 {
-    Object* bullet = new Bullet(*this,EBULLET,x,y,-0.1,0,charsheet);
+    Object* bullet = new Bullet(*this,EBULLET,x,y,-5,0,charsheet);
     ebullets.push_back(bullet);
 }
 
@@ -358,11 +404,26 @@ void Game::pollEvents()//i have a 2KRO keyboard :/
        
 }
 
-
-void Game::draw()
+void Game::delayFramesPerSecond()
 {
-    applyRender();
-    pwindow.clear();
+    if((SDL_GetTicks() - game_timer) < (1000 / 30))
+    {
+        SDL_Delay((1000 / 30) - (SDL_GetTicks() - game_timer));
+    }    
+}
+
+
+void Game::draw()                                                                                                                                                                                                       
+{
+  
+  if(over== false)applyRender();
+  pwindow.clear();
+  delayFramesPerSecond();  
+  if(over==true && state != OVER)
+  {
+      SDL_Delay(3000);
+      state = OVER;
+  }
 }
 
 void Game::loadWave()
@@ -399,10 +460,39 @@ void Game::createPlayer()
     player = new Player(*this,3,charsheet);
 }
 
+
+void Game::apply_text(SDL_Surface* surface,SDL_Rect position)
+{
+    SDL_Texture * texture = nullptr;
+    
+
+    SDL_SetColorKey(surface, SDL_TRUE, SDL_MapRGB(surface->format, 0x0, 0x0, 0x0));
+
+    texture = SDL_CreateTextureFromSurface(Window::_renderer, surface);
+
+  
+    SDL_RenderCopy(Window::_renderer,texture,NULL,&position);
+    SDL_FreeSurface(surface);
+    SDL_DestroyTexture(texture);
+
+}
+
+void Game::renderText(char* text,SDL_Rect position)
+{
+    message = TTF_RenderText_Solid( g_font,text, textColor );
+    apply_text(message, position );
+
+}
+
+
 bool Game::initGame()
 {
     wave = 0;
     n_waves = 1;
+    game_timer = SDL_GetTicks();//global timer initialization
+    message = nullptr;
+    status = createRectangle(0,0,500,30);
+    gameend = createRectangle(WIN_W/4,WIN_H/4,500,300);
     state = RUNNING;
     timer[GLOBAL_TIMER] = SDL_GetTicks();
     camera = createRectangle(0,32,WIN_W,WIN_H-32);
@@ -410,7 +500,10 @@ bool Game::initGame()
     {
         return false;
     }
-    
+    if(!loadText())
+    {
+        return false;
+    }
     createPlayer();
     loadWave(); 
     cout<<"Player created"<<endl;
@@ -443,6 +536,9 @@ SDL_Texture * Game::loadTexture(const char * image, SDL_Surface * surface)
             fprintf(stderr, "[%s: %d]Warning: Could not load image %s into surface, error: %s\n", __FILE__, __LINE__, image, SDL_GetError());
             return NULL;
         }
+
+
+
     }
 
     texture = SDL_CreateTextureFromSurface(Window::_renderer, surface);
@@ -453,8 +549,8 @@ SDL_Texture * Game::loadTexture(const char * image, SDL_Surface * surface)
     }
 
     SDL_FreeSurface(surface);
-
     return texture;
+
 }
 
 SDL_Texture* Game::createTexture(string path)

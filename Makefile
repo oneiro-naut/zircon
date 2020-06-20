@@ -6,7 +6,7 @@ CDIR=src
 BDIR=bin
 LDIR =lib
 
-LIBS=-lm -lSDL2 -lSDL2_image 
+LIBS=-lm -lSDL2 -lSDL2_image -lSDL2_ttf
 
 DEPS = $(wildcard $(IDIR)/*.h)
 

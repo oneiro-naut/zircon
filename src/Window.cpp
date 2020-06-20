@@ -27,6 +27,11 @@ bool Window::initWindow()
         cerr<<"Failed to initilize SDL_image."<<endl;
         return false;
     }
+       //Initialize SDL_ttf
+    if( TTF_Init() == -1 )
+    {
+        return false;    
+    }
     _window = SDL_CreateWindow(_title.c_str(),SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,_width,_height,0);//c_str converts cpp string to c string
     cout<<"Created window"<<endl;
     if(_window==nullptr)

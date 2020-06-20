@@ -6,7 +6,7 @@ Enemy::Enemy(Game& g,int l,float x,float y,SDL_Texture* sprt):Object(g,l,sprt)
     
     type = ENEMY;
     //shield = false;
-    _vx = -0.01;
+    _vx = -2;
     _vy = 0;
     _x = x;
     _y = y;

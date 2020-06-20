@@ -37,22 +37,32 @@ class Game{
     enum State{RUNNING,PAUSED,OVER}state=RUNNING;
     Window &pwindow;
     //global timer type needed
-    
+    Uint32 game_timer;
     //global distance traversed
     //global camera  sdl rect///since our game is side scrolling
     
     //all sprite-data here
-    
+    TTF_Font * g_font;
+    SDL_Surface *message ;
+    SDL_Rect status ;
+    SDL_Color textColor;
+    SDL_Rect gameend;
     SDL_Texture* charsheet;//tileset1
     //SDL_Texture*
     //SDL_Texture* overworld;//tileset2
     //SDL_Texture* gameFrame;
+    void delayFramesPerSecond();
     void spawnEnemyWave();
     void loadWave();
     void loadWave1();
+    bool loadText();
+    void showGameOver(char * winstat);
+
+    void apply_text(SDL_Surface* surface,SDL_Rect position);
     void loadWave1Enemies();
     //void transform();
     void updatePlayer();
+    void updateStatusText();
     bool isInsideScreen(SDL_Rect r);
     void updateEnemies();
     void updateBullets();
@@ -65,6 +75,7 @@ class Game{
     void applyRender();// get rect overlap of all entities with camera and apply them to rendering target
     bool initGame();
     bool initTextures();
+    void renderText(char* text,SDL_Rect position);
     void applyTexture(Object* obj,float scale);
     void applyTextureEx(Object* obj, float scale, double angle, SDL_Point * center, SDL_RendererFlip flip);
     SDL_Texture* createTexture(string path);
