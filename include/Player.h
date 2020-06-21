@@ -17,7 +17,8 @@ class Player : public Object
     protected:
     Uint32 pbul_timer ;
     Uint32 shield_timer;
-    enum State{IDLE,FIRE,HIT,DEAD,ANIM_SIZE}state=IDLE;
+    void updateShield();
+    enum State{IDLE,FIRE,SHIELD,HIT,DEAD,ANIM_SIZE}state=IDLE;
     bool shield;
     virtual void collisionResponse(obj_t withtype,SDL_Rect overlap_r);
     virtual void checkBoundaryCollision();

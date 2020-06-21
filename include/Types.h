@@ -8,19 +8,26 @@ struct anima_t
     SDL_Rect _FRAME; //initialized with base frame
     int CUR_FRAME;
     //add int MAX_COUNT and int COUNT basically how many times the animation must loop...
+    int MAX_COUNT;
     //it can be indefinite ie -1 or some finite count(for animation like PREDEAD or HIT)
+    int COUNT;
     anima_t(){
         N_FRAMES = 0;
         //DEF_FRAME = def_f;
-        CUR_FRAME = 0;
+        CUR_FRAME = 1;
+        MAX_COUNT = -1;
+        COUNT = 0;
         _FRAME = {0,0,0,0}; // set according to tileset texture
     }
     
-    anima_t(int n,int def_f,SDL_Rect f_offset)
+    anima_t(int n,int count,SDL_Rect f_offset)
     {
         N_FRAMES = n;
         //DEF_FRAME = def_f;
-        CUR_FRAME = 0;
+        //DEF_FRAME = 1;
+        CUR_FRAME = 1;
+        MAX_COUNT = count;
+        COUNT = 0;
         _FRAME = f_offset; // set according to tileset texture
     }
 

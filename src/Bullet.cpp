@@ -23,13 +23,13 @@ bool Bullet::initSprites()//can be parsed from a file
 {
     
     SDL_Rect alivep = {32,144,16,16};//can store these offsets in a file to parse
-    SDL_Rect alivee = {0,144,16,16};
+    SDL_Rect alivee = {32,144,16,16};
     SDL_Rect hitb = {96,144,16,16};
     //sdl rect up sdl rect down...
-    if(type==PBULLET)sprites[ALIVE] = new anima_t(4,0,alivep);
-    if(type==EBULLET)sprites[ALIVE] = new anima_t(2,0,alivee);
-    sprites[HIT] = new anima_t(2,0,hitb);
-    sprites[DEAD] = new anima_t(2,0,hitb);
+    if(type==PBULLET)sprites[ALIVE] = new anima_t(4,-1,alivep);
+    if(type==EBULLET)sprites[ALIVE] = new anima_t(4,-1,alivee);
+    sprites[HIT] = new anima_t(6,1,hitb);
+    sprites[DEAD] = new anima_t(6,0,hitb);
     curr_sprite = *(sprites[state]);
     return true;
 }
@@ -66,28 +66,28 @@ void Bullet::collisionResponse(obj_t withtype,SDL_Rect overlap_r)
         case EBULLET:
             if(type==PBULLET)
             {
-                life--;
+                //life--;
             changeState(HIT);
             }
             break;
         case PBULLET:
             if(type==EBULLET)
             {
-                life--;
+                //life--;
             changeState(HIT);
             }
             break;
         case ENEMY:
             if(type==PBULLET)
             {
-                life--;
+                //life--;
             changeState(HIT);
             }
             break;
         case PLAYER:
             if(type==EBULLET)
             {
-                life--;
+                //life--;
                 changeState(HIT);
             }
             break;
@@ -117,6 +117,7 @@ void Bullet::changeState(State nextstate)
     {
         changed = false;
     }   
+    if(nextstate == DEAD)life--;//idk
     state = nextstate;
     updateSprite(changed);
 }
@@ -127,16 +128,25 @@ SDL_Rect Bullet::getNextFrame()
     //static Uint32 timer = 0;
     SDL_Rect frame = curr_sprite._FRAME;
     int cur_f = curr_sprite.CUR_FRAME;
-        if(cur_f >= curr_sprite.N_FRAMES)
+        if(cur_f >= curr_sprite.N_FRAMES && curr_sprite.MAX_COUNT == -1)
         {
         
-            curr_sprite.CUR_FRAME = 0;//cylic
+            curr_sprite.CUR_FRAME = 1;//cylic
+        }
+        else if(cur_f >= curr_sprite.N_FRAMES && curr_sprite.MAX_COUNT >=0)
+        {
+            curr_sprite.CUR_FRAME = 1;
+            curr_sprite.COUNT += 1;   
+            if(curr_sprite.COUNT >= curr_sprite.MAX_COUNT)
+            {
+                if(state == HIT) changeState(DEAD);
+            }
         }
         else{
-            frame.x += cur_f*frame.w;
+           
             curr_sprite.CUR_FRAME +=1;
         }
-    
+        frame.x += (curr_sprite.CUR_FRAME-1)*frame.w;
     return frame;
 }
 

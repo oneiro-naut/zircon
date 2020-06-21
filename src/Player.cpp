@@ -34,11 +34,12 @@ bool Player::initSprites()//can be parsed from a file
 {
     
     SDL_Rect idle = {192,32,32,32};//can store these offsets in a file to parse
-    
+    SDL_Rect sh = {320,32,32,32};
     //sdl rect up sdl rect down...
-    sprites[IDLE] = new anima_t(4,0,idle);
+    sprites[IDLE] = new anima_t(4,-1,idle);
     sprites[FIRE] = sprites[IDLE];
     sprites[HIT] = sprites[IDLE];
+    sprites[SHIELD] = new anima_t(4,-1,sh);
     sprites[DEAD] = sprites[IDLE];
     curr_sprite = *(sprites[state]);
     return true;
@@ -73,10 +74,10 @@ void Player::updateByKey()
     if(keyarr[SDL_SCANCODE_RCTRL]==1)
     {
         fireBullet();
-        changeState(FIRE);
+        //changeState(FIRE);
         return;
     }
-    changeState(IDLE);
+    //changeState(IDLE);
 }
 
 
@@ -88,6 +89,7 @@ void Player::update()
     }
     updateByKey();
     updatePosition();
+    updateShield();
     curr_frame = getNextFrame();
     
 }
@@ -113,23 +115,30 @@ void Player::fireBullet()
     
 }
 
+void Player::updateShield()
+{
+    shielded();
+}
+
 
 bool Player::shielded()
 {
    if(shield){
     if(!shield_timer)
     {
-        shield_timer = SDL_GetTicks() + 1000;//1s shield
+        shield_timer = SDL_GetTicks() + 5000;//5s shield
     }
-    else if(SDL_GetTicks()<=shield_timer)
+    else if(SDL_GetTicks()<shield_timer)
     {
-        //cout <<"Shield active"<<endl;
+        cout <<"Shield active"<<endl;
         return shield;
 
     }
-    else{
+    else if(SDL_GetTicks()>=shield_timer){
         shield_timer = 0;
         shield = false;
+        changeState(IDLE);
+        cout<<"shield deactivated!"<<endl;
         }
     }
     
@@ -140,6 +149,8 @@ bool Player::shielded()
 void Player::activateShield()
 {
     shield = true;
+    //state = SHIELD;
+    changeState(SHIELD);
 }
 
 void Player::collisionResponse(obj_t withtype,SDL_Rect overlap_r)
@@ -200,14 +211,14 @@ SDL_Rect Player::getNextFrame()
 
         if(cur_f >= curr_sprite.N_FRAMES )
         {
-            curr_sprite.CUR_FRAME = 0;//cylic
+            curr_sprite.CUR_FRAME = 1;//cylic
 
         }
         else{
-            frame.x += cur_f*frame.w;
+            
             curr_sprite.CUR_FRAME +=1;
         }
-   
+    frame.x += (curr_sprite.CUR_FRAME-1)*frame.w;
 
     return frame;
 }

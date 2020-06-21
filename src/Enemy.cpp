@@ -35,7 +35,7 @@ bool Enemy::initSprites()//can be parsed from a file
     
     SDL_Rect idle = {192,64,32,32};//can store these offsets in a file to parse
     //sdl rect up sdl rect down...
-    sprites[IDLE] = new anima_t(4,0,idle);
+    sprites[IDLE] = new anima_t(4,-1,idle);
     sprites[FIRE] = sprites[IDLE];
     sprites[HIT] = sprites[IDLE];
     sprites[DEAD] = sprites[IDLE];
@@ -159,13 +159,14 @@ SDL_Rect Enemy::getNextFrame()
     int cur_f = curr_sprite.CUR_FRAME;
         if(cur_f >= curr_sprite.N_FRAMES )
         {
-            curr_sprite.CUR_FRAME = 0;//cylic
+            curr_sprite.CUR_FRAME = 1;//cylic
 
         }
         else{
-            frame.x += cur_f*frame.w;
+            
             curr_sprite.CUR_FRAME +=1;
         }
+        frame.x += (curr_sprite.CUR_FRAME-1)*frame.w;
     
     return frame;
 }
