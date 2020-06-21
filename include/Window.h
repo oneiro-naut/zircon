@@ -17,6 +17,7 @@ class Window{
     bool _closed;
     bool initWindow();
     SDL_Window *_window=nullptr;//better than NULL
+    
     public:
         Window(const string &title,int height,int width);
         ~Window();

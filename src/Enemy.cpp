@@ -6,7 +6,7 @@ Enemy::Enemy(Game& g,int l,float x,float y,SDL_Texture* sprt):Object(g,l,sprt)
     
     type = ENEMY;
     //shield = false;
-    _vx = -2;
+    _vx = -1;
     _vy = 0;
     _x = x;
     _y = y;
@@ -33,9 +33,9 @@ Enemy::~Enemy()
 bool Enemy::initSprites()//can be parsed from a file 
 {
     
-    SDL_Rect idle = {0,32,32,32};//can store these offsets in a file to parse
+    SDL_Rect idle = {192,64,32,32};//can store these offsets in a file to parse
     //sdl rect up sdl rect down...
-    sprites[IDLE] = new anima_t(1,0,idle);
+    sprites[IDLE] = new anima_t(4,0,idle);
     sprites[FIRE] = sprites[IDLE];
     sprites[HIT] = sprites[IDLE];
     sprites[DEAD] = sprites[IDLE];
@@ -154,11 +154,9 @@ void Enemy::changeState(State nextstate)
 
 SDL_Rect Enemy::getNextFrame()
 {
-    static Uint32 timer = 0;
+    
     SDL_Rect frame = curr_sprite._FRAME;
     int cur_f = curr_sprite.CUR_FRAME;
-    if(timer==0||SDL_GetTicks()>timer){
-        timer = SDL_GetTicks() + 34;//30fps 
         if(cur_f >= curr_sprite.N_FRAMES )
         {
             curr_sprite.CUR_FRAME = 0;//cylic
@@ -168,11 +166,7 @@ SDL_Rect Enemy::getNextFrame()
             frame.x += cur_f*frame.w;
             curr_sprite.CUR_FRAME +=1;
         }
-    }
-    else if(SDL_GetTicks()<=timer)
-    {
-        //do nothing just wait its like delay
-    }
+    
     return frame;
 }
 

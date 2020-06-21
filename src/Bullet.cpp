@@ -22,11 +22,14 @@ Bullet::Bullet(Game& g,obj_t btype,float x,float y,float vx,float vy,SDL_Texture
 bool Bullet::initSprites()//can be parsed from a file 
 {
     
-    SDL_Rect alive = {32,144,16,16};//can store these offsets in a file to parse
+    SDL_Rect alivep = {32,144,16,16};//can store these offsets in a file to parse
+    SDL_Rect alivee = {0,144,16,16};
+    SDL_Rect hitb = {96,144,16,16};
     //sdl rect up sdl rect down...
-    sprites[ALIVE] = new anima_t(2,0,alive);
-    sprites[HIT] = new anima_t(2,0,alive);
-    sprites[DEAD] = new anima_t(2,0,alive);
+    if(type==PBULLET)sprites[ALIVE] = new anima_t(4,0,alivep);
+    if(type==EBULLET)sprites[ALIVE] = new anima_t(2,0,alivee);
+    sprites[HIT] = new anima_t(2,0,hitb);
+    sprites[DEAD] = new anima_t(2,0,hitb);
     curr_sprite = *(sprites[state]);
     return true;
 }
@@ -121,11 +124,9 @@ void Bullet::changeState(State nextstate)
 
 SDL_Rect Bullet::getNextFrame()
 {
-    static Uint32 timer = 0;
+    //static Uint32 timer = 0;
     SDL_Rect frame = curr_sprite._FRAME;
     int cur_f = curr_sprite.CUR_FRAME;
-    if(timer==0||SDL_GetTicks()>timer){
-        timer = SDL_GetTicks() + 34;//30fps 
         if(cur_f >= curr_sprite.N_FRAMES)
         {
         
@@ -135,12 +136,7 @@ SDL_Rect Bullet::getNextFrame()
             frame.x += cur_f*frame.w;
             curr_sprite.CUR_FRAME +=1;
         }
-    }
-    else if(SDL_GetTicks()<=timer)
-    {
-        //do nothing just wait its like delay
-    }
-
+    
     return frame;
 }
 

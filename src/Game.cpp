@@ -221,13 +221,13 @@ bool Game::loadText()
 
 void Game::genPBullet(float x,float y)
 {
-    Object* bullet = new Bullet(*this,PBULLET,x,y,8,0,charsheet);
+    Object* bullet = new Bullet(*this,PBULLET,x,y,4,0,charsheet);
     pbullets.push_back(bullet);
 }
 
 void Game::genEBullet(float x,float y)
 {
-    Object* bullet = new Bullet(*this,EBULLET,x,y,-5,0,charsheet);
+    Object* bullet = new Bullet(*this,EBULLET,x,y,-4,0,charsheet);
     ebullets.push_back(bullet);
 }
 
@@ -523,11 +523,6 @@ SDL_Texture * Game::loadTexture(const char * image, SDL_Surface * surface)
 
         }
 
-        if(strstr(image, "bmp") == NULL)
-        {
-            fprintf(stderr, "[%s: %d]Warning: Images are not bitmap\n", __FILE__, __LINE__);
-            return NULL;
-        }
 
         surface = IMG_Load(image);
 
@@ -599,7 +594,7 @@ SDL_Rect Game::createRectangle(int x,int y,int w,int h)
 
 bool Game::initTextures()
 {
-    charsheet = createTexture("../assets/sprite-sheet.bmp");
+    charsheet = createTexture("../assets/newsprtsheet.png");
     if(charsheet!=nullptr)return true;
     else return false;
 }

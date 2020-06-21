@@ -33,9 +33,10 @@ Player::~Player()
 bool Player::initSprites()//can be parsed from a file 
 {
     
-    SDL_Rect idle = {192,0,32,32};//can store these offsets in a file to parse
+    SDL_Rect idle = {192,32,32,32};//can store these offsets in a file to parse
+    
     //sdl rect up sdl rect down...
-    sprites[IDLE] = new anima_t(1,0,idle);
+    sprites[IDLE] = new anima_t(4,0,idle);
     sprites[FIRE] = sprites[IDLE];
     sprites[HIT] = sprites[IDLE];
     sprites[DEAD] = sprites[IDLE];
@@ -55,19 +56,19 @@ void Player::updateByKey()
     setvY(0);
     if(keyarr[SDL_SCANCODE_C]==1)
     {
-        _vy += 5;
+        _vy += 3;
     }
     if(keyarr[SDL_SCANCODE_A]==1)
     {
-        _vy += -5;
+        _vy += -3;
     }
     if(keyarr[SDL_SCANCODE_D]==1)
     {
-        _vx += 5;
+        _vx += 3;
     }
     if(keyarr[SDL_SCANCODE_Z]==1)
     {
-        _vx += -5;
+        _vx += -3;
     }    
     if(keyarr[SDL_SCANCODE_RCTRL]==1)
     {
@@ -193,11 +194,10 @@ void Player::changeState(State nextstate)
 
 SDL_Rect Player::getNextFrame()
 {
-    static Uint32 timer = 0;
+    //static Uint32 timer = 0;
     SDL_Rect frame = curr_sprite._FRAME;
     int cur_f = curr_sprite.CUR_FRAME;
-    if(timer==0||SDL_GetTicks()>timer){
-        timer = SDL_GetTicks() + 34;//30fps 
+
         if(cur_f >= curr_sprite.N_FRAMES )
         {
             curr_sprite.CUR_FRAME = 0;//cylic
@@ -207,11 +207,8 @@ SDL_Rect Player::getNextFrame()
             frame.x += cur_f*frame.w;
             curr_sprite.CUR_FRAME +=1;
         }
-    }
-    else if(SDL_GetTicks()<=timer)
-    {
-        //do nothing just wait its like delay
-    }
+   
+
     return frame;
 }
 
