@@ -1,12 +1,13 @@
 #include "Game.h"
+#include "Object.h"
 #include "Player.h"
 #include "Enemy.h"
 #include "Bullet.h"
-#include "Powerup.h"
+//#include "Powerup.h"
 #include <iostream>
 #include <stdio.h>
 #include <string.h>
-
+#include "Rectangle.h"
 
 
 Game::Game(Window &pwin):pwindow(pwin)
@@ -14,7 +15,11 @@ Game::Game(Window &pwin):pwindow(pwin)
 
     //player=new Player(*this,10,10,50,50,0,255,0,255,0,0,0,0);
     over = false;
-
+    renderer = pwindow.renderer;
+    if(renderer == nullptr)
+    {
+        cerr << "renderer is null"<<endl;
+    }
     if(!initGame())
     {
         over = true;
@@ -44,14 +49,14 @@ void Game::updateScore(){
 
 void Game::showGameOver(char * winstat)
 {
-    renderText(winstat,gameend);
+    renderer->renderText(winstat,camera.w/4,camera.h/4,g_font,textColor);
 }
 
 void Game::updateStatusText()
 {
-    char stat[100];
+    char stat[100]={0};
     sprintf(stat,"Life : %d       Score: %d       Wave : %d",player->getLives(),score,wave);
-    renderText(stat,status);
+    renderer->renderText(stat,0,0,g_font,textColor);
 
 }
 
@@ -81,6 +86,7 @@ void Game::updateEnemies()
 
 void Game::update()
 {
+    delayFramesPerSecond();  //so delay should be here not in draw/render functions
     if(state == OVER)
     {
 
@@ -100,7 +106,7 @@ void Game::update()
 
         return;
     }
-
+    //testobj->update();
     if(isPlayerDead())
     {
         endGame();
@@ -112,16 +118,16 @@ void Game::update()
         return;
     }
 
-    //update-player
+    // //update-player
     updatePlayer();
-    //update-enemies
+    // //update-enemies
     updateEnemies();
-    //update-bullets
+    // //update-bullets
     updateBullets();
-    //update-powerups
-    //updatePowerups();
-    //problem is how do we update collision without the position rect
-    //maybe with a checkCollision(obj1,obj2) function;
+    // //update-powerups
+    // //updatePowerups();
+    // //problem is how do we update collision without the position rect
+    // //maybe with a checkCollision(obj1,obj2) function;
     updateCollision();
     updateStatusText();
    
@@ -210,19 +216,11 @@ void Game::updateEBullets()
     }
 }
 
-bool Game::loadText()
-{
-       //Open the font
-    textColor = { 255, 255, 255};
-    g_font = TTF_OpenFont( "../assets/fonts/DejaVuSerif.ttf", 10 );
-    if(g_font!=nullptr)return true;
-    else return false;
-}
-
 void Game::genPBullet(float x,float y)
 {
     Object* bullet = new Bullet(*this,PBULLET,x,y,4,0,charsheet);
     pbullets.push_back(bullet);
+    cout<<"bullet created "<<endl;
 }
 
 void Game::genEBullet(float x,float y)
@@ -249,7 +247,17 @@ bool Game::isEnemiesEmpty()
     }
 }
 
+SDL_Rect Game::positionObjFrame(Object* o,float scale)
+{
+    SDL_Rect rect = {
+        static_cast<int>(o->getX()),
+        static_cast<int>(o->getY()),
+        static_cast<int>(o->getW()*scale),
+        static_cast<int>(o->getH()*scale)
+    };
 
+    return rect;
+}
 
 
 void Game::checkCollision(Object* obj1,Object* obj2)
@@ -331,11 +339,6 @@ void Game::updateCollision()
 }
 
 
-void Game::deleteTextures()
-{
-    SDL_DestroyTexture(charsheet);
-}
-
 void Game::pollEvents()//i have a 2KRO keyboard :/
 {
     SDL_Event event;
@@ -416,9 +419,13 @@ void Game::delayFramesPerSecond()
 void Game::draw()                                                                                                                                                                                                       
 {
   
-  if(over== false)applyRender();
-  pwindow.clear();
-  delayFramesPerSecond();  
+  if(over== false)
+  {
+      //testobj->draw();
+      drawObjects();
+  }
+  renderer->clear();
+  
   if(over==true && state != OVER)
   {
       SDL_Delay(3000);
@@ -436,17 +443,17 @@ void Game::spawnEnemyWave()
     Object* e = nullptr;
     list <Object*> :: iterator it ;
     if(isEnemiesEmpty() && wave == 0)//init wave 0 test wave
-    {
-        enemies.push_back(new Enemy(*this,1,camera.w+50,50,charsheet));
-        enemies.push_back(new Enemy(*this,1,camera.w+50,100,charsheet));
-        enemies.push_back(new Enemy(*this,1,camera.w+90,50,charsheet));
-        enemies.push_back(new Enemy(*this,1,camera.w+90,72,charsheet));
-        enemies.push_back(new Enemy(*this,1,camera.w+130,50,charsheet));
-        enemies.push_back(new Enemy(*this,1,camera.w+130,350,charsheet));
-        enemies.push_back(new Enemy(*this,1,camera.w+170,600,charsheet));
-        enemies.push_back(new Enemy(*this,1,camera.w+170,400,charsheet));
-        enemies.push_back(new Enemy(*this,1,camera.w+200,200,charsheet));
-        enemies.push_back(new Enemy(*this,1,camera.w+200,500,charsheet));
+     {
+        enemies.push_back(new Enemy(*this,ENEMY,1,camera.w+50,50,charsheet));
+        enemies.push_back(new Enemy(*this,ENEMY,1,camera.w+50,100,charsheet));
+        enemies.push_back(new Enemy(*this,ENEMY,1,camera.w+90,50,charsheet));
+        enemies.push_back(new Enemy(*this,ENEMY,1,camera.w+90,72,charsheet));
+        enemies.push_back(new Enemy(*this,ENEMY,1,camera.w+130,50,charsheet));
+        enemies.push_back(new Enemy(*this,ENEMY,1,camera.w+130,350,charsheet));
+        enemies.push_back(new Enemy(*this,ENEMY,1,camera.w+170,600,charsheet));
+        enemies.push_back(new Enemy(*this,ENEMY,1,camera.w+170,400,charsheet));
+        enemies.push_back(new Enemy(*this,ENEMY,1,camera.w+200,200,charsheet));
+        enemies.push_back(new Enemy(*this,ENEMY,1,camera.w+200,500,charsheet));
         
             
         
@@ -457,36 +464,14 @@ void Game::spawnEnemyWave()
 
 void Game::createPlayer()
 {
-    player = new Player(*this,3,charsheet);
+    player = new Player(*this,PLAYER,3,32,32,charsheet);
 }
 
-
-void Game::apply_text(SDL_Surface* surface,SDL_Rect position)
-{
-    SDL_Texture * texture = nullptr;
-    
-
-    SDL_SetColorKey(surface, SDL_TRUE, SDL_MapRGB(surface->format, 0x0, 0x0, 0x0));
-
-    texture = SDL_CreateTextureFromSurface(Window::_renderer, surface);
-
-  
-    SDL_RenderCopy(Window::_renderer,texture,NULL,&position);
-    SDL_FreeSurface(surface);
-    SDL_DestroyTexture(texture);
-
-}
-
-void Game::renderText(char* text,SDL_Rect position)
-{
-    message = TTF_RenderText_Solid( g_font,text, textColor );
-    apply_text(message, position );
-
-}
 
 
 bool Game::initGame()
 {
+    
     wave = 0;
     n_waves = 1;
     game_timer = SDL_GetTicks();//global timer initialization
@@ -496,6 +481,7 @@ bool Game::initGame()
     state = RUNNING;
     timer[GLOBAL_TIMER] = SDL_GetTicks();
     camera = createRectangle(0,32,WIN_W,WIN_H-32);
+    renderer->changeScreen(camera);
     if(!initTextures())
     {
         return false;
@@ -504,11 +490,54 @@ bool Game::initGame()
     {
         return false;
     }
+    //testobj = new Object(*this,PLAYER,1,30,30,charsheet);
     createPlayer();
     loadWave(); 
     cout<<"Player created"<<endl;
     return true;
 }
+
+bool Game::initTextures()
+{
+    charsheet = createTexture("../assets/newsprtsheet.png");
+    if(charsheet!=nullptr)return true;
+    else return false;
+}
+
+
+void Game::drawObjects() // now this is the real mess
+{
+    list <Object*> :: iterator it;
+    //render player
+    player->draw();
+    //render enemies
+    for(it = enemies.begin();it != enemies.end();it++)
+    {
+        (*it)->draw();
+    }
+    //render bullets
+    for(it = pbullets.begin();it != pbullets.end();it++)
+    {
+        (*it)->draw();
+    }
+    for(it = ebullets.begin();it != ebullets.end();it++)
+    {
+        (*it)->draw();
+    }    
+
+}
+
+
+
+bool Game::loadText()
+{
+    //Open the font
+    textColor = { 255, 255, 255};
+    g_font = TTF_OpenFont( "../assets/fonts/DejaVuSerif.ttf", 10 );
+    if(g_font!=nullptr)return true;
+    else return false;
+}
+
 
 SDL_Texture * Game::loadTexture(const char * image, SDL_Surface * surface)
 {
@@ -536,7 +565,7 @@ SDL_Texture * Game::loadTexture(const char * image, SDL_Surface * surface)
 
     }
 
-    texture = SDL_CreateTextureFromSurface(Window::_renderer, surface);
+    texture = renderer->createTexturefromSurface(surface);
 
     if(texture == NULL)
     {
@@ -581,118 +610,10 @@ SDL_Texture* Game::createTexture(string path)
 
 }
 
-SDL_Rect Game::createRectangle(int x,int y,int w,int h)
+
+
+
+void Game::deleteTextures()
 {
-    SDL_Rect r = {0,0,0,0};
-    r.x = x;
-    r.y = y;
-    r.w = w;
-    r.h = h;
-    
-    return r;
-}
-
-bool Game::initTextures()
-{
-    charsheet = createTexture("../assets/newsprtsheet.png");
-    if(charsheet!=nullptr)return true;
-    else return false;
-}
-
-bool Game::isInsideScreen(SDL_Rect r)
-{
-    SDL_Rect overlap = getOverlapRect(r,camera);
-    if(getRectArea(overlap)!=0)return true;
-    else return false;
-}
-
-void Game::applyTextureEx(Object* obj,float scale, double angle, SDL_Point * center, SDL_RendererFlip flip)
-{
-    SDL_Rect offset = positionObjFrame(obj,scale);
-
-    if(!isInsideScreen(offset))
-    {
-        return ;
-    }
-
-    SDL_Rect cur = obj->getCurrentSprite();
-    if(SDL_RenderCopyEx(Window::_renderer, obj->sheet,&cur, &offset, angle, center, flip))
-    {
-        fprintf(stderr, "[%s: %d]Warning: Could not render copy, error: %s\n",__FILE__, __LINE__, SDL_GetError());
-    }
-}
-void Game::applyTexture(Object* obj,float scale)
-{
-    applyTextureEx(obj,scale, 0, NULL, SDL_FLIP_NONE);
-}
-
-SDL_Rect Game::getOverlapRect(SDL_Rect r1,SDL_Rect r2)//found it physics n-body-simulation
-{
-    int x0=r1.x;
-    int y0=r1.y;
-    int w0=r1.w;
-    int h0=r1.h;
-    int x1=r2.x;
-    int y1=r2.y;
-    int w1=r2.w;
-    int h1=r2.h;
-    
-    int interx1 = 0;
-    int interx2 = 0;
-    int intery1 = 0;
-    int intery2 = 0;
-
-    if(x0<x1&&x1<x0+w0){ interx1 = x1;}
-    if(x0<x1+w1&&x1+w1<x0+w0){interx2 = x1+w1;}
-    if(x1<x0&&x0<x1+w1){interx1 = x0;}
-    if(x1<x0+w0&&x0+w0<x1+w1){interx2 = x0+ w0;}
-    if(x0==x1&&w0==w1 ){interx1 = x0; interx2 = x0+w0;}
-    if(y0<y1&&y1<y0+h0){ intery1 = y1;}
-    if(y0<y1+h1&&y1+h1<y0+h0){intery2 = y0+h0;}
-    if(y1<y0&&y0<(y1+h1)){intery1 = y0;}
-    if(y1<(y0+h0)&&y0+h0<(y1+h1)){intery2 = y0+h0;}
-    if( y0==y1&&h0==h1){intery1 = y0; intery2 = y0+h0;}
-    
-    SDL_Rect interrect ={interx1,intery1,interx2-interx1,intery2-intery1};
-    return interrect;
-}
-
-SDL_Rect Game::positionObjFrame(Object* obj,float scale)
-{   //relying on implicit type casting NO
-    SDL_Rect objrect = {
-        static_cast<int>(obj->getX()),
-        static_cast<int>(obj->getY()),
-        obj->getW(),
-        obj->getH()
-    };
-    objrect.w *= scale;
-    objrect.h *= scale;
-    return objrect;
-}
-
-void Game::applyRender()
-{
-    list <Object*> :: iterator it;
-    //render player
-    applyTexture(player,1);
-    //render enemies
-    for(it = enemies.begin();it != enemies.end();it++)
-    {
-        applyTexture(*it,1);
-    }
-    //render bullets
-    for(it = pbullets.begin();it != pbullets.end();it++)
-    {
-        applyTexture(*it,1);
-    }
-    for(it = ebullets.begin();it != ebullets.end();it++)
-    {
-        applyTexture(*it,1);
-    }    
-    //render powerups
-    for(it = powerups.begin();it != powerups.end();it++)
-    {
-        applyTexture(*it,1);
-    }    
-
+    SDL_DestroyTexture(charsheet);
 }

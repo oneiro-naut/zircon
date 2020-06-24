@@ -1,12 +1,13 @@
 #include "Window.h"
 #include <iostream>
+//I HATE Static variables 
 
 
-SDL_Renderer *Window::_renderer = nullptr;
 
 Window::Window(const string &title,int height,int width): _title(title),_height(height),_width(width)
 {
     _closed = false;
+    default_screen = { 0, 0, _width, _height}; // will be passed to renderer then Game obj will change it
     if(!initWindow())
     {
         _closed = true;
@@ -37,19 +38,15 @@ bool Window::initWindow()
     if(_window==nullptr)
     {
         cerr << "Failed to create window." <<endl;
-        return 0;
+        return false;
     }
     
-
-    _renderer= SDL_CreateRenderer(_window,-1,SDL_RENDERER_ACCELERATED);
-
-    if(_renderer==nullptr)
+    renderer = new Renderer(_window, default_screen);
+    if(!renderer->initComplete())
     {
-        cerr << "Failed to create renderer" <<endl;
-        return 0;
-    
+        return false;
     }
-
+    cout << "created renderer"<<endl;
     return true;
 
 
@@ -59,7 +56,8 @@ bool Window::initWindow()
 
 Window::~Window()
 {
-    SDL_DestroyRenderer(_renderer);
+    delete renderer;
+    cout << "detroying window"<<endl;
     SDL_DestroyWindow(_window);
     IMG_Quit();
     SDL_Quit();
@@ -99,13 +97,5 @@ int Window::getW()
 int Window::getH()
 {
     return _height;
-}
-
-void Window::clear() const
-{
-    SDL_RenderPresent(_renderer);
-    SDL_SetRenderDrawColor(_renderer,0,0,0,255);
-    SDL_RenderClear(_renderer);
-    
 }
 

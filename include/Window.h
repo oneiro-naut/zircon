@@ -4,10 +4,13 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 #include <string>
+#include "Renderer.h"
 using namespace std;
 
 #define WIN_W 900
 #define WIN_H 700
+
+class Renderer;
 
 class Window{
     private:
@@ -17,7 +20,7 @@ class Window{
     bool _closed;
     bool initWindow();
     SDL_Window *_window=nullptr;//better than NULL
-    
+    SDL_Rect default_screen; // default screen to everything
     public:
         Window(const string &title,int height,int width);
         ~Window();
@@ -30,7 +33,8 @@ class Window{
         bool init();
         
     public:
-    static SDL_Renderer *_renderer;
+    //static SDL_Renderer *_renderer; 
+    Renderer* renderer;
 
 
 

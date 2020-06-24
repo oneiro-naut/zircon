@@ -1,11 +1,11 @@
 #include "Player.h"
 #include <iostream>
 
-Player::Player(Game& g,int l,SDL_Texture* sprt):Object(g,l,sprt)
+Player::Player(Game& g,obj_t t,int l,int w,int h,SDL_Texture* sprt):Object(g,t,l,w,h,sprt)
 {
     pbul_timer = 0;
     shield_timer = 0;
-    type = PLAYER;
+    //type = PLAYER;
     shield = false;
     _x = 0;
     _y = game.camera.h / 2;
@@ -14,8 +14,6 @@ Player::Player(Game& g,int l,SDL_Texture* sprt):Object(g,l,sprt)
     _ax = 0;
     _ay = 0;   
     //alive = true;
-    sprites = new anima_t* [ANIM_SIZE];
-    state = IDLE;
     if(!initSprites())
     {
         life = 0;
@@ -25,10 +23,12 @@ Player::Player(Game& g,int l,SDL_Texture* sprt):Object(g,l,sprt)
 
 }
 
+
 Player::~Player()
 {
 
 }
+
 
 bool Player::initSprites()//can be parsed from a file 
 {
@@ -36,12 +36,10 @@ bool Player::initSprites()//can be parsed from a file
     SDL_Rect idle = {192,32,32,32};//can store these offsets in a file to parse
     SDL_Rect sh = {320,32,32,32};
     //sdl rect up sdl rect down...
-    sprites[IDLE] = new anima_t(4,-1,idle);
-    sprites[FIRE] = sprites[IDLE];
-    sprites[HIT] = sprites[IDLE];
-    sprites[SHIELD] = new anima_t(4,-1,sh);
-    sprites[DEAD] = sprites[IDLE];
-    curr_sprite = *(sprites[state]);
+    state = "idle";
+    addSprite(state,4,-1,10,idle,sheet);
+    addSprite("shield",4,-1,10,sh,sheet);
+    curSprite = spriteset[state];
     return true;
 }
 
@@ -90,9 +88,13 @@ void Player::update()
     updateByKey();
     updatePosition();
     updateShield();
-    curr_frame = getNextFrame();
+    updateSpriteFrame();
+    updateState();
+    
     
 }
+
+
 
 void Player::updatePosition()
 {
@@ -110,7 +112,7 @@ void Player::fireBullet()
     {
         pbul_timer = SDL_GetTicks() + 200; // bullet generation delay in ms
         //cout<<"player y = "<<_y<<"bullet y = "<<_y+(curr_frame.h/4)<<endl;
-        game.genPBullet(_x+curr_frame.w-8,_y+(curr_frame.h/4));
+        game.genPBullet(_x+_w-8,_y+(_h/4));
     }
     
 }
@@ -137,7 +139,7 @@ bool Player::shielded()
     else if(SDL_GetTicks()>=shield_timer){
         shield_timer = 0;
         shield = false;
-        changeState(IDLE);
+        changeState("idle");
         cout<<"shield deactivated!"<<endl;
         }
     }
@@ -150,7 +152,7 @@ void Player::activateShield()
 {
     shield = true;
     //state = SHIELD;
-    changeState(SHIELD);
+    changeState("shield");
 }
 
 void Player::collisionResponse(obj_t withtype,SDL_Rect overlap_r)
@@ -181,53 +183,6 @@ void Player::collisionResponse(obj_t withtype,SDL_Rect overlap_r)
 }
 
 
-void Player::updateSprite(bool change)
-{
-    if(change == true)
-    {
-        curr_sprite = *(sprites[state]);
-    }    
-    
-}
-
-void Player::changeState(State nextstate)
-{
-    bool changed = true;
-    if(nextstate == state)
-    {
-        changed = false;
-    }   
-    state = nextstate;
-    updateSprite(changed);
-    
-}
-
-
-SDL_Rect Player::getNextFrame()
-{
-    //static Uint32 timer = 0;
-    SDL_Rect frame = curr_sprite._FRAME;
-    int cur_f = curr_sprite.CUR_FRAME;
-
-        if(cur_f >= curr_sprite.N_FRAMES )
-        {
-            curr_sprite.CUR_FRAME = 1;//cylic
-
-        }
-        else{
-            
-            curr_sprite.CUR_FRAME +=1;
-        }
-    frame.x += (curr_sprite.CUR_FRAME-1)*frame.w;
-
-    return frame;
-}
-
-SDL_Rect Player::getCurrentSprite()//amisnomer
-{
-    return curr_frame;
-}
-
 
 void Player::checkBoundaryCollision()
 {
@@ -236,22 +191,32 @@ void Player::checkBoundaryCollision()
         setX(0);
         
     }
-    if(_x+curr_frame.w > game.camera.w)
+    if(_x+_w > game.camera.w)
     {
-        setX(game.camera.w - curr_frame.w);
+        setX(game.camera.w - _w);
         //state = DEAD;
     }
     if(_y < 0)
     {
         setY(0);
     }
-    if(_y+curr_frame.h > game.camera.h)
+    if(_y+_h > game.camera.h)
     {
-        setY(game.camera.h - curr_frame.h);
+        setY(game.camera.h - _h);
     }
 
 
 }
+
+void Player::updateState()
+{
+    if(curSprite->isOver())
+    {
+        if(!strcmp(state,"shield"))changeState("idle");
+    }
+}
+
+
 
 void Player::hasCollided(obj_t withtype,SDL_Rect overlap_r)
 {

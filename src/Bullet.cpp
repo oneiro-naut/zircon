@@ -4,16 +4,15 @@ Bullet::Bullet(Game& g,obj_t btype,float x,float y,float vx,float vy,SDL_Texture
 :Object(g,btype,x,y,vx,vy,sprt)
 {
     life = 1;
+    _w = 16;
+    _h = 16;
     _ax = 0;
     _ay = 0;   
     //alive = true;
-    sprites = new anima_t* [ANIM_SIZE];
-    state = ALIVE;
     if(!initSprites())
     {
         life = 0;
     }
-
 
 
 }
@@ -26,11 +25,13 @@ bool Bullet::initSprites()//can be parsed from a file
     SDL_Rect alivee = {32,144,16,16};
     SDL_Rect hitb = {96,144,16,16};
     //sdl rect up sdl rect down...
-    if(type==PBULLET)sprites[ALIVE] = new anima_t(4,-1,alivep);
-    if(type==EBULLET)sprites[ALIVE] = new anima_t(4,-1,alivee);
-    sprites[HIT] = new anima_t(6,1,hitb);
-    sprites[DEAD] = new anima_t(6,0,hitb);
-    curr_sprite = *(sprites[state]);
+    state = "alive";
+    if(type==PBULLET)addSprite("alive",4,-1,15,alivep,sheet);
+    if(type==EBULLET)addSprite("alive",4,-1,15,alivee,sheet);
+    addSprite("hit",6,1,20,hitb,sheet);
+    addSprite("dead",6,0,20,hitb,sheet);
+    curSprite = spriteset[state];
+    
     return true;
 }
 
@@ -42,9 +43,11 @@ void Bullet::update()
     {
         return;
     }
-    curr_frame = getNextFrame();
+   
     
     updatePosition();
+    updateSpriteFrame();
+    updateState();
     
 }
 
@@ -67,28 +70,28 @@ void Bullet::collisionResponse(obj_t withtype,SDL_Rect overlap_r)
             if(type==PBULLET)
             {
                 //life--;
-            changeState(HIT);
+            changeState("hit");
             }
             break;
         case PBULLET:
             if(type==EBULLET)
             {
                 //life--;
-            changeState(HIT);
+            changeState("hit");
             }
             break;
         case ENEMY:
             if(type==PBULLET)
             {
                 //life--;
-            changeState(HIT);
+            changeState("hit");
             }
             break;
         case PLAYER:
             if(type==EBULLET)
             {
                 //life--;
-                changeState(HIT);
+                changeState("hit");
             }
             break;
         };
@@ -100,82 +103,38 @@ void Bullet::collisionResponse(obj_t withtype,SDL_Rect overlap_r)
 }
 
 
-void Bullet::updateSprite(bool change)
+
+void Bullet::updateState()
 {
-    if(change == true)
+    if(curSprite->isOver())
     {
-        curr_sprite = *(sprites[state]);
-    }    
-    
-}
-
-void Bullet::changeState(State nextstate)
-{
-    
-    bool changed = true;
-    if(nextstate == state)
-    {
-        changed = false;
-    }   
-    if(nextstate == DEAD)life--;//idk
-    state = nextstate;
-    updateSprite(changed);
+        if(!strcmp(state,"hit"))changeState("dead");
+    }
 }
 
 
-SDL_Rect Bullet::getNextFrame()
-{
-    //static Uint32 timer = 0;
-    SDL_Rect frame = curr_sprite._FRAME;
-    int cur_f = curr_sprite.CUR_FRAME;
-        if(cur_f >= curr_sprite.N_FRAMES && curr_sprite.MAX_COUNT == -1)
-        {
-        
-            curr_sprite.CUR_FRAME = 1;//cylic
-        }
-        else if(cur_f >= curr_sprite.N_FRAMES && curr_sprite.MAX_COUNT >=0)
-        {
-            curr_sprite.CUR_FRAME = 1;
-            curr_sprite.COUNT += 1;   
-            if(curr_sprite.COUNT >= curr_sprite.MAX_COUNT)
-            {
-                if(state == HIT) changeState(DEAD);
-            }
-        }
-        else{
-           
-            curr_sprite.CUR_FRAME +=1;
-        }
-        frame.x += (curr_sprite.CUR_FRAME-1)*frame.w;
-    return frame;
-}
-
-SDL_Rect Bullet::getCurrentSprite()
-{
-    return curr_frame;
-}
 
 void Bullet::checkBoundaryCollision()
 {
     if(_x < 0 )
     {
         if(type==EBULLET)life--;
-        if(!isAlive())changeState(DEAD);
+        if(!isAlive())changeState("dead");
     }
-    else if(_x+curr_frame.w > game.camera.w)
+    else if(_x+_w > game.camera.w)
     {
         if(type==PBULLET)life--;
-        if(!isAlive())changeState(DEAD);
+        if(!isAlive())changeState("dead");
     }
     else if(_y < 0)
     {
         life--;
-        if(!isAlive())changeState(DEAD);
+        if(!isAlive())changeState("dead");
     }
-    else if(_y+curr_frame.h > game.camera.h)
+    else if(_y+_h > game.camera.h)
     {
         life--;
-        if(!isAlive())changeState(DEAD);
+        if(!isAlive())changeState("dead");
     }
 
 

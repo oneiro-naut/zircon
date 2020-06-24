@@ -1,21 +1,21 @@
 #include "Enemy.h"
 #include <iostream>
 
-Enemy::Enemy(Game& g,int l,float x,float y,SDL_Texture* sprt):Object(g,l,sprt)
+Enemy::Enemy(Game& g,obj_t t,int l,float x,float y,SDL_Texture* sprt):Object(g,t,l,sprt)
 {
     
-    type = ENEMY;
     //shield = false;
     _vx = -1;
     _vy = 0;
     _x = x;
     _y = y;
+    _w = 32;
+    _h = 32;
     _ax = 0;
     _ay = 0;   
     //alive = true;
     ebul_timer = 0;
-    sprites = new anima_t* [ANIM_SIZE];
-    state = IDLE;
+
     if(!initSprites())
     {
         life = 0;
@@ -35,17 +35,12 @@ bool Enemy::initSprites()//can be parsed from a file
     
     SDL_Rect idle = {192,64,32,32};//can store these offsets in a file to parse
     //sdl rect up sdl rect down...
-    sprites[IDLE] = new anima_t(4,-1,idle);
-    sprites[FIRE] = sprites[IDLE];
-    sprites[HIT] = sprites[IDLE];
-    sprites[DEAD] = sprites[IDLE];
-    curr_sprite = *(sprites[state]);
+    state = "idle";
+    addSprite(state,4,-1,10,idle,sheet);
+    addSprite("fire",4,1,10,idle,sheet);
+    addSprite("dead",4,1,10,idle,sheet);
+    curSprite = spriteset[state];
     return true;
-}
-
-void Enemy::pollEvents()
-{
-    //is it even needed? no
 }
 
 void Enemy::update()
@@ -56,8 +51,8 @@ void Enemy::update()
     }
     fireBullet();
     updatePosition();
-    //cout<<_x<<" "<<_y<<endl;
-    curr_frame = getNextFrame();
+    updateSpriteFrame();
+    updateState();
     
 }
 
@@ -77,8 +72,8 @@ void Enemy::fireBullet()
     {
         ebul_timer = SDL_GetTicks() + 2000; // bullet generation delay in ms
         //cout<<"enemy y = "<<_y<<"bullet y = "<<_y+(curr_frame.h/4)<<endl;
-        game.genEBullet(_x-curr_frame.w,_y+(curr_frame.h/4));
-        changeState(FIRE);
+        game.genEBullet(_x-_w,_y+(_h/4));
+        //changeState("fire");
     }
     
 }
@@ -121,7 +116,8 @@ void Enemy::collisionResponse(obj_t withtype,SDL_Rect overlap_r)
         case PBULLET:
         life--;
         game.updateScore();
-        if(!isAlive())changeState(DEAD);
+        if(!isAlive())
+        changeState("dead");
         break;
 
     }
@@ -129,62 +125,22 @@ void Enemy::collisionResponse(obj_t withtype,SDL_Rect overlap_r)
 
 }
 
-
-void Enemy::updateSprite(bool change)
+void Enemy::updateState()
 {
-    if(change == true)
+    if(curSprite->isOver())
     {
-        curr_sprite = *(sprites[state]);
-    }    
-    
+        if(!strcmp(state,"fire"))changeState("idle");
+    }
 }
-
-void Enemy::changeState(State nextstate)
-{
-    bool changed = true;
-    if(nextstate == state)
-    {
-        changed = false;
-    }   
-    state = nextstate;
-    updateSprite(changed);
-    
-}
-
-
-SDL_Rect Enemy::getNextFrame()
-{
-    
-    SDL_Rect frame = curr_sprite._FRAME;
-    int cur_f = curr_sprite.CUR_FRAME;
-        if(cur_f >= curr_sprite.N_FRAMES )
-        {
-            curr_sprite.CUR_FRAME = 1;//cylic
-
-        }
-        else{
-            
-            curr_sprite.CUR_FRAME +=1;
-        }
-        frame.x += (curr_sprite.CUR_FRAME-1)*frame.w;
-    
-    return frame;
-}
-
-SDL_Rect Enemy::getCurrentSprite()//amisnomer
-{
-    return curr_frame;
-}
-
 
 void Enemy::checkBoundaryCollision()
 {
     if(_x < 0 )
     {
         life = 0;
-        changeState(DEAD);//wont increase score tho
+        changeState("dead");//wont increase score tho
     }
-    if(_x+curr_frame.w > game.camera.w)
+    if(_x+_w > game.camera.w)
     {
         //do nothing
         //state = DEAD;
@@ -193,7 +149,7 @@ void Enemy::checkBoundaryCollision()
     {
         _vy = -_vy;
     }
-    if(_y+curr_frame.h > game.camera.h)
+    if(_y+_h > game.camera.h)
     {
         _vy = -_vy;
     }

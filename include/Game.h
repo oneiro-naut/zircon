@@ -6,7 +6,7 @@
 #include <iterator>
 
 class Object;
-
+class Renderer;
 
 
 class Game{
@@ -23,11 +23,15 @@ class Game{
     bool inline isOver(){return over;}
     const Uint8* keystate;//keystate array//thru sdl get keystate function
     uint32_t timer[TIMER_TYPE_SIZE];
+    Renderer* renderer;
+    Window &pwindow;
     private:
+    //Object* testobj;
     int wave;
     int score;
     int n_waves;
     Object* player;
+
     list<Object*> enemies;
     list<Object*> pbullets;
     list<Object*> ebullets;
@@ -35,7 +39,7 @@ class Game{
     bool over;
     
     enum State{RUNNING,PAUSED,OVER}state=RUNNING;
-    Window &pwindow;
+    
     //global timer type needed
     Uint32 game_timer;
     //global distance traversed
@@ -54,11 +58,11 @@ class Game{
     void delayFramesPerSecond();
     void spawnEnemyWave();
     void loadWave();
+    void drawObjects();
     void loadWave1();
     bool loadText();
     void showGameOver(char * winstat);
 
-    void apply_text(SDL_Surface* surface,SDL_Rect position);
     void loadWave1Enemies();
     //void transform();
     void updatePlayer();
@@ -70,18 +74,14 @@ class Game{
     void updateEBullets();
     void updatePowerups();
     //void updateCamera();
-    SDL_Rect createRectangle(int x,int y,int w,int h);
+    
     void updateCollision();
-    void applyRender();// get rect overlap of all entities with camera and apply them to rendering target
     bool initGame();
     bool initTextures();
-    void renderText(char* text,SDL_Rect position);
-    void applyTexture(Object* obj,float scale);
-    void applyTextureEx(Object* obj, float scale, double angle, SDL_Point * center, SDL_RendererFlip flip);
-    SDL_Texture* createTexture(string path);
+    SDL_Texture* createTexture(string path);//we need a texture class as well
     SDL_Texture* loadTexture(const char * image,SDL_Surface* surface);
-    int inline getRectArea(SDL_Rect r){ return r.w * r.h;};
-    SDL_Rect getOverlapRect(SDL_Rect r1,SDL_Rect r2);
+    
+    
     void endGame();
     void pauseGame();
     void resumeGame();
@@ -95,10 +95,10 @@ class Game{
     void restart();
     void deleteTextures();
     void freeObjects();
-    SDL_Rect positionObjFrame(Object* obj,float scale);
+    SDL_Rect positionObjFrame(Object* o,float scale);
     void deleteEnemy(list <Object*> :: iterator it );
     void deleteBullet(list <Object*> :: iterator it );  // We need something like these functions as well
     void deletePowerup(list <Object*> :: iterator it );
-    void checkCollision(Object* obj1,Object* obj2);
+    void checkCollision(Object* obj1,Object* obj2); // in future a collision class as well which can do complex stuff
 };
 #endif

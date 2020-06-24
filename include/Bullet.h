@@ -12,15 +12,12 @@ class Bullet : public Object{
     ~Bullet();
     virtual void hasCollided(obj_t withtype,SDL_Rect overlap_r);
     protected:
-    enum State{ALIVE,HIT,DEAD,ANIM_SIZE}state=ALIVE;
     bool initSprites();
     virtual void collisionResponse(obj_t withtype,SDL_Rect overlap_r);
     void updatePosition();
-    void updateSprite(bool change);
-    void changeState(State nextstate);//more like update state
+    void updateState();
     virtual void checkBoundaryCollision();
-    virtual SDL_Rect getCurrentSprite();
-    virtual SDL_Rect getNextFrame();
+  
    
 };
 
