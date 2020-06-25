@@ -16,6 +16,8 @@ Game::Game(Window &pwin):pwindow(pwin)
     //player=new Player(*this,10,10,50,50,0,255,0,255,0,0,0,0);
     over = false;
     renderer = pwindow.renderer;
+    charsheet = nullptr;
+    background = nullptr;
     if(renderer == nullptr)
     {
         cerr << "renderer is null"<<endl;
@@ -415,6 +417,11 @@ void Game::delayFramesPerSecond()
     }    
 }
 
+void Game::drawBackground()
+{
+    renderer->renderTexture(background,camera,0,0,1);
+}
+
 
 void Game::draw()                                                                                                                                                                                                       
 {
@@ -422,7 +429,8 @@ void Game::draw()
   if(over== false)
   {
       //testobj->draw();
-      drawObjects();
+    drawBackground();
+    drawObjects();
   }
   renderer->clear();
   
@@ -500,7 +508,8 @@ bool Game::initGame()
 bool Game::initTextures()
 {
     charsheet = createTexture("../assets/newsprtsheet.png");
-    if(charsheet!=nullptr)return true;
+    background = createTexture("../assets/background.png");
+    if(charsheet!=nullptr && background!= nullptr)return true;
     else return false;
 }
 

@@ -52,6 +52,7 @@ class Game{
     SDL_Color textColor;
     SDL_Rect gameend;
     SDL_Texture* charsheet;//tileset1
+    SDL_Texture* background;
     //SDL_Texture*
     //SDL_Texture* overworld;//tileset2
     //SDL_Texture* gameFrame;
@@ -62,7 +63,7 @@ class Game{
     void loadWave1();
     bool loadText();
     void showGameOver(char * winstat);
-
+    void drawBackground();
     void loadWave1Enemies();
     //void transform();
     void updatePlayer();
