@@ -1,10 +1,10 @@
 #include "Enemy.h"
 #include <iostream>
 
-Enemy::Enemy(Game& g,obj_t t,int l,float x,float y,SDL_Texture* sprt):Object(g,t,l,sprt)
+Enemy::Enemy(const GameInfo &gInfo, obj_t t, int l, float x, float y, SDL_Texture *sprt) : Object(gInfo, t, l, sprt)
 {
-    
-    //shield = false;
+
+    // shield = false;
     _vx = -1;
     _vy = 0;
     _x = x;
@@ -12,40 +12,49 @@ Enemy::Enemy(Game& g,obj_t t,int l,float x,float y,SDL_Texture* sprt):Object(g,t
     _w = 32;
     _h = 32;
     _ax = 0;
-    _ay = 0;   
-    //alive = true;
+    _ay = 0;
+    // alive = true;
     ebul_timer = 0;
 
-    if(!initSprites())
+    if (!initSprites())
     {
         life = 0;
     }
-
-
-
 }
 
 Enemy::~Enemy()
 {
-
 }
 
-bool Enemy::initSprites()//can be parsed from a file 
+bool Enemy::initSprites() // can be parsed from a file
 {
-    
-    SDL_Rect idle = {192,64,32,32};//can store these offsets in a file to parse
-    //sdl rect up sdl rect down...
+
+    SDL_Rect idle = {192, 64, 32, 32}; // can store these offsets in a file to parse
+    // sdl rect up sdl rect down...
     state = "idle";
-    addSprite(state,4,-1,10,idle,sheet);
-    addSprite("fire",4,1,10,idle,sheet);
-    addSprite("dead",4,1,10,idle,sheet);
+    addSprite(state, 4, -1, 10, idle, sheet);
+    addSprite("fire", 4, 1, 10, idle, sheet);
+    addSprite("dead", 4, 1, 10, idle, sheet);
     curSprite = spriteset[state];
     return true;
 }
 
+void Enemy::fireBullet()
+{
+
+    if (ebul_timer == 0 || SDL_GetTicks() > ebul_timer)
+    {
+        ebul_timer = SDL_GetTicks() + 2000; // bullet generation delay in ms
+        // cout<<"enemy y = "<<_y<<"bullet y = "<<_y+(curr_frame.h/4)<<endl;
+        EFireBulletMessage emsg(_x, _y, _w, _h);
+        dispatchEvent(&emsg); // game.onEvent(&emsg)
+        // changeState("fire");
+    }
+}
+
 void Enemy::update()
 {
-    if(!isAlive())
+    if (!isAlive())
     {
         return;
     }
@@ -53,7 +62,6 @@ void Enemy::update()
     updatePosition();
     updateSpriteFrame();
     updateState();
-    
 }
 
 void Enemy::updatePosition()
@@ -63,21 +71,6 @@ void Enemy::updatePosition()
     updateY();
     checkBoundaryCollision();
 }
-
-
-void Enemy::fireBullet()
-{
-    
-    if(ebul_timer==0||SDL_GetTicks()>ebul_timer)
-    {
-        ebul_timer = SDL_GetTicks() + 2000; // bullet generation delay in ms
-        //cout<<"enemy y = "<<_y<<"bullet y = "<<_y+(curr_frame.h/4)<<endl;
-        game.genEBullet(_x-_w,_y+(_h/4));
-        //changeState("fire");
-    }
-    
-}
-
 
 // bool Enemy::shielded()
 // {
@@ -96,7 +89,7 @@ void Enemy::fireBullet()
 //         shield = false;
 //         }
 //     }
-    
+
 //     return shield;
 
 // }
@@ -106,58 +99,53 @@ void Enemy::fireBullet()
 //     shield = true;
 // }
 
-void Enemy::collisionResponse(obj_t withtype,SDL_Rect overlap_r)
+void Enemy::collisionResponse(obj_t withtype, SDL_Rect overlap_r)
 {
-    
-    switch(withtype)
+    switch (withtype)
     {
- 
-
-        case PBULLET:
+    case obj_t::PBULLET:
         life--;
-        game.updateScore();
-        if(!isAlive())
-        changeState("dead");
+        EnemyCollidedMessage ec(obj_t::PBULLET);
+        dispatchEvent(&ec);
+        // game.updateScore(); // dis
+        if (!isAlive())
+            changeState("dead");
         break;
-
     }
-    
-
 }
 
 void Enemy::updateState()
 {
-    if(curSprite->isOver())
+    if (curSprite->isOver())
     {
-        if(!strcmp(state,"fire"))changeState("idle");
+        if (!strcmp(state, "fire"))
+            changeState("idle");
     }
 }
 
 void Enemy::checkBoundaryCollision()
 {
-    if(_x < 0 )
+    if (_x < 0)
     {
         life = 0;
-        changeState("dead");//wont increase score tho
-    }
-    if(_x+_w > game.camera.w)
+        changeState("dead"); // wont increase score tho
+    }                        // create some shared info object dont pass game ref itself this sucks
+    if (_x + _w > gInfo.sceneWidth)
     {
-        //do nothing
-        //state = DEAD;
+        // do nothing
+        // state = DEAD;
     }
-    if(_y < 0)
-    {
-        _vy = -_vy;
-    }
-    if(_y+_h > game.camera.h)
+    if (_y < 0)
     {
         _vy = -_vy;
     }
-
-
+    if (_y + _h > gInfo.sceneHeight)
+    {
+        _vy = -_vy;
+    }
 }
 
-void Enemy::hasCollided(obj_t withtype,SDL_Rect overlap_r)
+void Enemy::hasCollided(obj_t withtype, SDL_Rect overlap_r)
 {
-    collisionResponse(withtype,overlap_r);
+    collisionResponse(withtype, overlap_r);
 }

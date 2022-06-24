@@ -1,17 +1,30 @@
-IDIR =include
+IDIR=include
 CPP=g++
+LD=g++
+
+OBJDIR=obj
+SRCDIR=src
+BINDIR=bin
+LIBDIR=lib
+
 CFLAGS=-I$(IDIR)
+LDFLAGS=-lm -lSDL2 -lSDL2_image -lSDL2_ttf
+DBGFLAGS=-g -Wall
 
-CDIR=src
-BDIR=bin
-LDIR =lib
+SRC = $(wildcard $(SRCDIR)/*.cpp)
+OBJ = $(SRC:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
-LIBS=-lm -lSDL2 -lSDL2_image -lSDL2_ttf
+$(OBJDIR)/%.o: $(SRCDIR)/%.cpp
+	$(CPP) $(DBGFLAGS) $(CFLAGS) -c $^ -o $@
 
-DEPS = $(wildcard $(IDIR)/*.h)
+game: $(OBJ)
+	$(LD) $(DBGFLAGS) $(CFLAGS) $(LDFLAGS) $^ -o $(BINDIR)/$@
 
-SRC = $(wildcard $(CDIR)/*.cpp)
+.PHONY: run
+run: game
+	$(BINDIR)/game
 
-game: $(SRC)
-	$(CPP) -g -o $(BDIR)/$@ $^ $(CFLAGS) $(LIBS)
-
+.PHONY: clean
+clean:
+	rm -rf $(BINDIR)/*
+	rm -rf $(OBJDIR)/*

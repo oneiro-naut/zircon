@@ -2,7 +2,8 @@
 #define TYPES_H
 #include <SDL2/SDL.h>
 
-typedef enum obj_t{
+typedef enum obj_t
+{
     PLAYER,
     POWERUP,
     WALL,
@@ -11,8 +12,7 @@ typedef enum obj_t{
     EBULLET,
     SIZE
 
-
-}obj_t;
+} obj_t;
 
 typedef enum
 {
@@ -21,6 +21,18 @@ typedef enum
     TIMER_TYPE_SIZE
 } timerType;
 
+struct GameInfo
+{
+    int sceneWidth, sceneHeight;
+    const Uint8 *keystate;
+};
 
+class Message
+{
+public:
+    int code; // int codes for different types
+    Message() {}
+    virtual ~Message() {}
+};
 
 #endif
