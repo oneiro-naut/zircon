@@ -99,8 +99,7 @@ private:
     // void createBullet
     void genBullet(float x, float y);
     void spawnEnemy();
-    bool isWaveOver();
-    bool isEnemiesEmpty();
+    inline bool isWaveOver() { return enemies.empty(); }
     bool isPlayerDead();
     void restart();
     void deleteTextures();
@@ -113,5 +112,7 @@ private:
     void onEvent(Message *msg);
     bool SDLInit();
     void regObjOnEventCb();
+    void deleteObjects();
+    bool checkGameOver();
 };
 #endif

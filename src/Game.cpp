@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "Game.h"
+#include "Util.h"
 #include "Renderer.h"
 #include "Object.h"
 #include "Player.h"
@@ -31,6 +32,7 @@ Game::Game()
 
 Game::~Game()
 {
+    deleteObjects();
     deleteTextures();
 
     std::cout << "Destroying Game" << std::endl;
@@ -69,7 +71,7 @@ void Game::updateEnemies()
     {
         if (!(*it)->isAlive())
         {
-            delete (*it);
+            DELETEOBJ(*it)
             // std::cout<<"deleted 1 bullet"<<std::endl;
             it = enemies.erase(it); // returns next valid it
             if (it == enemies.end())
@@ -85,37 +87,14 @@ void Game::updateEnemies()
 
 void Game::update()
 {
+    if (over)
+        return;
     delayFramesPerSecond(); // so delay should be here not in draw/render functions
-    if (state == OVER)
-    {
-
-        return;
-    }
+    // if (state == OVER)
+    // {
+    //     return;
+    // }
     game_timer = SDL_GetTicks();
-    char win[50] = "You Win!";
-    char lose[50] = "You lose!";
-
-    if (isEnemiesEmpty())
-    {
-        endGame();
-        std::cout << "You win!" << std::endl;
-        std::cout << "Game Over!" << std::endl;
-        // char * win = "You Win!";
-        showGameOver(win);
-
-        return;
-    }
-    // testobj->update();
-    if (isPlayerDead())
-    {
-        endGame();
-        std::cout << "You lose!" << std::endl;
-        std::cout << "Game Over!" << std::endl;
-        // char * lose = "You Lose!";
-        showGameOver(lose);
-
-        return;
-    }
 
     // //update-player
     updatePlayer();
@@ -131,37 +110,36 @@ void Game::update()
     updateStatusText();
 }
 
-bool Game::isPlayerDead()
+void Game::deleteObjects()
 {
-    return !(player->isAlive());
-}
-void Game::endGame()
-{
-    over = true;
-    // state = OVER;
-    delete player;
+    DELETEOBJ(player)
     std::vector<Object *>::iterator it;
-    for (it = pbullets.begin(); it != pbullets.end(); it++)
+    for (it = pbullets.begin(); it != pbullets.end();)
     {
-        delete *it;
+        DELETEOBJ(*it)
         it = pbullets.erase(it);
     }
-
-    for (it = ebullets.begin(); it != ebullets.end(); it++)
+    for (it = ebullets.begin(); it != ebullets.end();)
     {
-        delete *it;
+        DELETEOBJ(*it)
         it = ebullets.erase(it);
     }
-    for (it = enemies.begin(); it != enemies.end(); it++)
+    for (it = enemies.begin(); it != enemies.end();)
     {
-        delete *it;
+        DELETEOBJ(*it)
         it = enemies.erase(it);
     }
 }
+
+void Game::endGame()
+{
+    over = true;
+}
+
 void Game::updatePlayer()
 {
-
-    player->update();
+    if (player)
+        player->update();
 }
 
 void Game::updateBullets()
@@ -177,7 +155,7 @@ void Game::updatePBullets()
     {
         if (!(*it)->isAlive())
         {
-            delete (*it);
+            DELETEOBJ(*it)
             // std::cout<<"deleted 1 bullet"<<std::endl;
             it = pbullets.erase(it); // returns next valid it
             if (it == pbullets.end())
@@ -198,7 +176,7 @@ void Game::updateEBullets()
     {
         if (!(*it)->isAlive())
         {
-            delete (*it);
+            DELETEOBJ(*it)
             // std::cout<<"deleted 1 bullet"<<std::endl;
             it = ebullets.erase(it); // returns next valid it
             if (it == ebullets.end())
@@ -214,7 +192,7 @@ void Game::updateEBullets()
 
 void Game::genPBullet(float x, float y)
 {
-    Object *bullet = new Bullet(info, PBULLET, x, y, 4, 0, charsheet);
+    Object *bullet = new Bullet(info, PBULLET, x, y, 6, 0, charsheet);
     using namespace std::placeholders;
     bullet->registerCb(std::bind(&Game::onEvent, this, _1));
     pbullets.push_back(bullet);
@@ -222,27 +200,10 @@ void Game::genPBullet(float x, float y)
 
 void Game::genEBullet(float x, float y)
 {
-    Object *bullet = new Bullet(info, EBULLET, x, y, -4, 0, charsheet);
+    Object *bullet = new Bullet(info, EBULLET, x, y, -6, 0, charsheet);
     using namespace std::placeholders;
     bullet->registerCb(std::bind(&Game::onEvent, this, _1));
     ebullets.push_back(bullet);
-}
-
-bool Game::isWaveOver()
-{
-    return isEnemiesEmpty();
-}
-
-bool Game::isEnemiesEmpty()
-{
-    if (enemies.size() == 0)
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
 }
 
 SDL_Rect Game::positionObjFrame(Object *o, float scale)
@@ -330,9 +291,34 @@ void Game::updateCollision()
     // sweet ;)
 }
 
+bool Game::checkGameOver()
+{
+    char win[50] = "You Win!";
+    char lose[50] = "You lose!";
+
+    if (enemies.empty())
+    {
+        endGame();
+        std::cout << "You win!" << std::endl;
+        std::cout << "Game Over!" << std::endl;
+        showGameOver(win);
+    }
+    // testobj->update();
+    if (!player->isAlive())
+    {
+        endGame();
+        std::cout << "You lose!" << std::endl;
+        std::cout << "Game Over!" << std::endl;
+        showGameOver(lose);
+    }
+    return over;
+}
+
 void Game::pollEvents() // i have a 2KRO keyboard :/
 {
     SDL_Event event;
+    if (checkGameOver())
+        return;
     SDL_PumpEvents(); // update keystate array
 
     if (SDL_PollEvent(&event) && keystate)
@@ -346,7 +332,6 @@ void Game::pollEvents() // i have a 2KRO keyboard :/
             case SDLK_ESCAPE:
                 over = true;
                 std::cout << "Closing Game!" << std::endl;
-                state = OVER;
                 over = true;
                 break;
             }
@@ -406,19 +391,16 @@ void Game::drawBackground()
 
 void Game::draw()
 {
-
     if (over == false)
     {
-        // testobj->draw();
         drawBackground();
         drawObjects();
     }
     renderer->clear();
 
-    if (over == true && state != OVER)
+    if (over == true)
     {
         SDL_Delay(3000);
-        state = OVER;
     }
 }
 
@@ -429,7 +411,7 @@ void Game::loadWave()
 
 void Game::spawnEnemyWave()
 {
-    if (isEnemiesEmpty() && wave == 0) // init wave 0 test wave
+    if (enemies.empty() && wave == 0) // init wave 0 test wave
     {
         enemies.push_back(new Enemy(info, ENEMY, 1, camera.w + 50, 50, charsheet));
         enemies.push_back(new Enemy(info, ENEMY, 1, camera.w + 50, 100, charsheet));

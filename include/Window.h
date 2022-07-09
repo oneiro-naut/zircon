@@ -3,8 +3,8 @@
 #include <string>
 #include <SDL2/SDL.h>
 
-#define WIN_W 900
-#define WIN_H 700
+#define WIN_W 1920
+#define WIN_H 1080
 
 class Window
 {

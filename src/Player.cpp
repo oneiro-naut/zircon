@@ -47,23 +47,23 @@ void Player::updateByKey()
     const Uint8 *keyarr = gInfo.keystate; // keystate will be shared var b/w game and player
     setvX(0);
     setvY(0);
-    if (keyarr[SDL_SCANCODE_C] == 1)
+    if (keyarr[SDL_SCANCODE_DOWN] == 1)
     {
-        _vy += 3;
+        _vy += 5;
     }
-    if (keyarr[SDL_SCANCODE_A] == 1)
+    if (keyarr[SDL_SCANCODE_UP] == 1)
     {
-        _vy += -3;
+        _vy += -5;
     }
-    if (keyarr[SDL_SCANCODE_D] == 1)
+    if (keyarr[SDL_SCANCODE_RIGHT] == 1)
     {
-        _vx += 3;
+        _vx += 5;
     }
-    if (keyarr[SDL_SCANCODE_Z] == 1)
+    if (keyarr[SDL_SCANCODE_LEFT] == 1)
     {
-        _vx += -3;
+        _vx += -5;
     }
-    if (keyarr[SDL_SCANCODE_RCTRL] == 1)
+    if (keyarr[SDL_SCANCODE_SPACE] == 1)
     {
         fireBullet();
         // changeState(FIRE);
