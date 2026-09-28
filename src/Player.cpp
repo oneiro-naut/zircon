@@ -44,26 +44,25 @@ void Player::pollEvents()
 
 void Player::updateByKey()
 {
-    const Uint8 *keyarr = gInfo.keystate; // keystate will be shared var b/w game and player
     setvX(0);
     setvY(0);
-    if (keyarr[SDL_SCANCODE_DOWN] == 1)
+    if (m_inputState->keyState[enumClassindex(Key::Down)] == 1)
     {
         _vy += 5;
     }
-    if (keyarr[SDL_SCANCODE_UP] == 1)
+    if (m_inputState->keyState[enumClassindex(Key::Up)] == 1)
     {
         _vy += -5;
     }
-    if (keyarr[SDL_SCANCODE_RIGHT] == 1)
+    if (m_inputState->keyState[enumClassindex(Key::Right)] == 1)
     {
         _vx += 5;
     }
-    if (keyarr[SDL_SCANCODE_LEFT] == 1)
+    if (m_inputState->keyState[enumClassindex(Key::Left)] == 1)
     {
         _vx += -5;
     }
-    if (keyarr[SDL_SCANCODE_SPACE] == 1)
+    if (m_inputState->keyState[enumClassindex(Key::Space)] == 1) // not suitable for this tap like event where holding does not make sense you press it once to one bullet
     {
         fireBullet();
         // changeState(FIRE);

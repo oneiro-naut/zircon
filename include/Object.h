@@ -7,6 +7,7 @@
 
 #include "Types.h"
 #include "Sprite.h"
+#include "InputTypes.h"
 
 class Object
 {
@@ -32,8 +33,11 @@ public:
     void registerCb(std::function<void(Message *)> cb);
     virtual void hasCollided(obj_t withtype, SDL_Rect overlap_r); // could have passed a special collision struct containing details about collision but its fine for now
 
+    static void registerInput(const InputState *gameInputState);
+
 protected:
     const GameInfo &gInfo;
+    static const InputState *m_inputState;
     SDL_Texture *sheet;
     obj_t type;
     // bool alive;

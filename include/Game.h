@@ -10,6 +10,7 @@
 #include "Window.h"
 #include "Renderer.h"
 #include "Object.h"
+#include "InputHandler.h"
 
 class Game
 {
@@ -25,7 +26,7 @@ public:
     void genPBullet(float x, float y);
     void genEBullet(float x, float y);
     bool inline isOver() { return over; }
-    const Uint8 *keystate; // keystate array//thru sdl get keystate function
+    // const Uint8 *keystate; // keystate array//thru sdl get keystate function
     uint32_t timer[TIMER_TYPE_SIZE];
     Renderer *renderer;
     Window *window;
@@ -36,6 +37,8 @@ private:
     int n_waves;
     GameInfo info;
     Object *player;
+
+    std::unique_ptr<InputHandler> m_inputHandler;
 
     std::vector<Object *> enemies;
     std::vector<Object *> pbullets;

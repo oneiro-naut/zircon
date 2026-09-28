@@ -1,6 +1,9 @@
 #include "Object.h"
 #include <iostream>
 using namespace std;
+
+const InputState *Object::m_inputState = nullptr;
+
 // having 3 constructors n only 1 of them having renderer init caused undefined behaviour therefore make only 1 base contructor for
 // every entity to avoid further ambuities
 
@@ -114,4 +117,9 @@ void Object::hasCollided(obj_t withtype, SDL_Rect overlap_r)
 void Object::registerCb(std::function<void(Message *)> cb)
 {
     dispatchEvent = cb;
+}
+
+void Object::registerInput(const InputState *gameInputState)
+{
+    m_inputState = gameInputState;
 }

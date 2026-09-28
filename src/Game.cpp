@@ -21,6 +21,8 @@ Game::Game()
     g_font = nullptr;
     renderer = nullptr;
 
+    m_inputHandler = std::make_unique<InputHandler>();
+
     if (!initGame())
     {
         over = true;
@@ -317,11 +319,12 @@ bool Game::checkGameOver()
 void Game::pollEvents() // i have a 2KRO keyboard :/
 {
     SDL_Event event;
+    m_inputHandler->updateInput(); // :)
     if (checkGameOver())
         return;
-    SDL_PumpEvents(); // update keystate array
+    // SDL_PumpEvents(); // update keystate array
 
-    if (SDL_PollEvent(&event) && keystate)
+    if (SDL_PollEvent(&event))
     {
         switch (event.type)
         {
@@ -454,10 +457,11 @@ bool Game::initGame()
     {
         return false;
     }
-    keystate = SDL_GetKeyboardState(NULL);
+    // keystate = SDL_GetKeyboardState(NULL); // Input
+    Object::registerInput(m_inputHandler->getInputState());
     info.sceneHeight = camera.h;
     info.sceneWidth = camera.w;
-    info.keystate = keystate;
+    // info.keystate = keystate;
 
     window = new Window("Zircon", WIN_H, WIN_W);
     if (!window->getWindow())

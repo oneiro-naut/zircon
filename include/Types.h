@@ -24,7 +24,6 @@ typedef enum
 struct GameInfo
 {
     int sceneWidth, sceneHeight;
-    const Uint8 *keystate;
 };
 
 class Message
