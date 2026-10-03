@@ -1,8 +1,8 @@
 #include "Rectangle.h"
 
-SDL_Rect createRectangle(int x, int y, int w, int h)
+ZirconRect createRectangle(int x, int y, int w, int h)
 {
-    SDL_Rect r = {0, 0, 0, 0};
+    ZirconRect r = {0, 0, 0, 0};
     r.x = x;
     r.y = y;
     r.w = w;
@@ -11,7 +11,7 @@ SDL_Rect createRectangle(int x, int y, int w, int h)
     return r;
 }
 
-SDL_Rect getOverlapRect(SDL_Rect r1, SDL_Rect r2) // found it physics n-body-simulation
+ZirconRect getOverlapRect(ZirconRect r1, ZirconRect r2) // found it physics n-body-simulation
 {
     int x0 = r1.x;
     int y0 = r1.y;
@@ -70,6 +70,6 @@ SDL_Rect getOverlapRect(SDL_Rect r1, SDL_Rect r2) // found it physics n-body-sim
         intery2 = y0 + h0;
     }
 
-    SDL_Rect interrect = {interx1, intery1, interx2 - interx1, intery2 - intery1};
+    ZirconRect interrect = {interx1, intery1, interx2 - interx1, intery2 - intery1};
     return interrect;
 }

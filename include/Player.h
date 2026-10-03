@@ -1,6 +1,7 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 #include "Object.h"
+#include "Timer.h"
 
 class PFireBulletMessage : public Message
 {
@@ -12,26 +13,34 @@ public:
 class Player : public Object
 {
 public:
-    Player(const GameInfo &gInfo, obj_t t, int l, int w, int h, SDL_Texture *sprt);
+    Player(float x, float y, obj_t t, int l, int w, int h, Texture sprt);
     ~Player();
-    virtual void hasCollided(obj_t withtype, SDL_Rect overlap_r);
     virtual void update();
-    // void draw();//lets see...it resides in the base class Object, well it doesnt...removed it
-    void pollEvents(); // its not needed anymore
+
+    virtual void hasCollided(obj_t withtype, ZirconRect overlap_r);
+
+    virtual void checkBoundaryCollision(const GameInfo &gInfo) override;
+
 protected:
-    Uint32 pbul_timer;
-    Uint32 shield_timer;
-    void updateShield();
-    void updateState();
-    bool shield;
-    virtual void collisionResponse(obj_t withtype, SDL_Rect overlap_r);
-    virtual void checkBoundaryCollision();
+    Timer m_bulletTimer;
+    Timer m_shieldTimer;
+
+    bool m_shield;
+
+protected:
     bool initSprites();
+
+    void updateState();
     void updateByKey();
+    void updatePosition();
+    void updateShield();
     void updateSprite(bool change);
+
     void activateShield();
     bool shielded();
+
     void fireBullet();
-    void updatePosition();
+
+    virtual void collisionResponse(obj_t withtype, ZirconRect overlap_r);
 };
 #endif

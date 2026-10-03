@@ -7,6 +7,11 @@
 
 class InputHandlerImpl;
 
+// I wanted to learn PImpl, though turns out here
+// Inheritance would be better
+// Create this outside Game
+// and pass it as a Ref: DI/Composition+Factory
+// The same pattern we have used for Renderer
 class InputHandler
 {
 public:
@@ -16,13 +21,13 @@ public:
     const InputState *getInputState() const;
 
     void updateInput();
-    // void pollEvents(); // updates keystate array val receieved from sdl, also "polls"
-    // void initKeyState(); [register sdl2 events or whatever library we would use] // can be done in the constructor as well
+
+    void pollEvents(std::queue<Event> &eventQ);
+
 private:
     InputState m_inputState; // consolodated input event state structure
     std::unique_ptr<InputHandlerImpl>
         m_impl;
-    //[sdl2] const Uint8 *keystate; // keystate array//thru sdl get keystate function
 };
 
 #endif // ZIRCON_INPUT_HANDLER_H

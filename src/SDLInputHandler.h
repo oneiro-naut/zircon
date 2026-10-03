@@ -10,6 +10,7 @@ public:
     SDLInputHandler();
     virtual ~SDLInputHandler();
     void updateInputState(InputState &state) const override;
+    void pollEvents(std::queue<Event> &eventQ) override;
 
 private:
     void sdlKeyStateToKeyInputState(InputState &state) const;

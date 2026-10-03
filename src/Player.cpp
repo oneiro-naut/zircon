@@ -1,14 +1,14 @@
 #include "Player.h"
 #include <iostream>
 
-Player::Player(const GameInfo &gInfo, obj_t t, int l, int w, int h, SDL_Texture *sprt) : Object(gInfo, t, l, w, h, sprt)
+Player::Player(float x, float y, obj_t t, int l, int w, int h, Texture sprt) : Object(t, l, w, h, sprt), m_bulletTimer(200), m_shieldTimer(5000)
 {
-    pbul_timer = 0;
-    shield_timer = 0;
-    // type = PLAYER;
-    shield = false;
-    _x = 0;
-    _y = gInfo.sceneHeight / 2;
+    // pbul_timer = 0;
+    // shield_timer = 0;
+    //  type = PLAYER;
+    m_shield = false;
+    _x = x;
+    _y = y;
     _vx = 0;
     _vy = 0;
     _ax = 0;
@@ -27,8 +27,8 @@ Player::~Player()
 bool Player::initSprites() // can be parsed from a file
 {
 
-    SDL_Rect idle = {192, 32, 32, 32}; // can store these offsets in a file to parse
-    SDL_Rect sh = {320, 32, 32, 32};
+    ZirconRect idle = {192, 32, 32, 32}; // can store these offsets in a file to parse
+    ZirconRect sh = {320, 32, 32, 32};
     // sdl rect up sdl rect down...
     state = "idle";
     addSprite(state, 4, -1, 10, idle, sheet);
@@ -37,30 +37,25 @@ bool Player::initSprites() // can be parsed from a file
     return true;
 }
 
-void Player::pollEvents()
-{
-    // is it even needed? no
-}
-
 void Player::updateByKey()
 {
     setvX(0);
     setvY(0);
     if (m_inputState->keyState[enumClassindex(Key::Down)] == 1)
     {
-        _vy += 5;
+        _vy += 15;
     }
     if (m_inputState->keyState[enumClassindex(Key::Up)] == 1)
     {
-        _vy += -5;
+        _vy += -15;
     }
     if (m_inputState->keyState[enumClassindex(Key::Right)] == 1)
     {
-        _vx += 5;
+        _vx += 15;
     }
     if (m_inputState->keyState[enumClassindex(Key::Left)] == 1)
     {
-        _vx += -5;
+        _vx += -15;
     }
     if (m_inputState->keyState[enumClassindex(Key::Space)] == 1) // not suitable for this tap like event where holding does not make sense you press it once to one bullet
     {
@@ -78,7 +73,7 @@ void Player::update()
         return;
     }
     updateByKey();
-    updatePosition();
+    // updatePosition();
     updateShield();
     updateSpriteFrame();
     updateState();
@@ -88,15 +83,16 @@ void Player::updatePosition()
 {
     updateX();
     updateY();
-    checkBoundaryCollision();
+    // checkBoundaryCollision();
 }
 
 void Player::fireBullet()
 {
 
-    if (pbul_timer == 0 || SDL_GetTicks() > pbul_timer)
+    // if (pbul_timer == 0 || SDL_GetTicks() > pbul_timer)
+    if (m_bulletTimer.updateTickOnTimeout())
     {
-        pbul_timer = SDL_GetTicks() + 200; // bullet generation delay in ms
+        // pbul_timer = SDL_GetTicks() + 200; // bullet generation delay in ms
 
         PFireBulletMessage pfbMsg(_x, _y, _w, _h);
         dispatchEvent(&pfbMsg);
@@ -110,36 +106,28 @@ void Player::updateShield()
 
 bool Player::shielded()
 {
-    if (shield)
+    if (m_shield)
     {
-        if (!shield_timer)
+        if (m_shieldTimer.resetTickOnTimeout()) // shield timer started
         {
-            shield_timer = SDL_GetTicks() + 5000; // 5s shield
-        }
-        else if (SDL_GetTicks() < shield_timer)
-        {
-            return shield;
-        }
-        else if (SDL_GetTicks() >= shield_timer)
-        {
-            shield_timer = 0;
-            shield = false;
+            // shield_timer = SDL_GetTicks() + 5000; // 5s shield
+            m_shield = false;
             changeState("idle");
             std::cout << "Shield deactivated!" << std::endl;
         }
     }
 
-    return shield;
+    return m_shield;
 }
 
 void Player::activateShield()
 {
-    shield = true;
+    m_shield = true;
     std::cout << "Shield activated" << std::endl;
     changeState("shield");
 }
 
-void Player::collisionResponse(obj_t withtype, SDL_Rect overlap_r)
+void Player::collisionResponse(obj_t withtype, ZirconRect overlap_r)
 {
 
     switch (withtype)
@@ -167,7 +155,7 @@ void Player::collisionResponse(obj_t withtype, SDL_Rect overlap_r)
     }
 }
 
-void Player::checkBoundaryCollision()
+void Player::checkBoundaryCollision(const GameInfo &gInfo)
 {
     if (_x < 0)
     {
@@ -197,7 +185,7 @@ void Player::updateState()
     }
 }
 
-void Player::hasCollided(obj_t withtype, SDL_Rect overlap_r)
+void Player::hasCollided(obj_t withtype, ZirconRect overlap_r)
 {
     collisionResponse(withtype, overlap_r);
 }

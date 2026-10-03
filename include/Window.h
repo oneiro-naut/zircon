@@ -3,9 +3,13 @@
 #include <string>
 #include <SDL2/SDL.h>
 
+#include "InputTypes.h"
+
 #define WIN_W 1920
 #define WIN_H 1080
 
+// Break this into
+// Abstraction/Interface + Concrete SDLWindow implementation
 class Window
 {
 private:
@@ -20,11 +24,12 @@ public:
     Window(const std::string &title, int height, int width);
     ~Window();
     inline bool isClosed() const { return _closed; }
-    void pollEvents(SDL_Event event);
+    // void pollEvents(SDL_Event event);
     int getW();
     int getH();
     inline SDL_Window *getWindow() { return _window; };
     inline SDL_Rect getDefaultScreen() { return default_screen; }
+    void handleEvent(const ProcessLevelEvent &event);
 
 private:
     bool init();

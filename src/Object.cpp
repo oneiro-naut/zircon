@@ -7,16 +7,16 @@ const InputState *Object::m_inputState = nullptr;
 // having 3 constructors n only 1 of them having renderer init caused undefined behaviour therefore make only 1 base contructor for
 // every entity to avoid further ambuities
 
-Object::Object(const GameInfo &gInfo, obj_t t, int l, SDL_Texture *sprt) : gInfo(gInfo), type(t), life(l), sheet(sprt)
+Object::Object(obj_t t, int l, Texture sprt) : type(t), life(l), sheet(sprt)
 {
 }
 
-Object::Object(const GameInfo &gInfo, obj_t t, float x, float y, float vx, float vy, SDL_Texture *ss)
-    : gInfo(gInfo), type(t), _x(x), _y(y), _vx(vx), _vy(vy), sheet(ss)
+Object::Object(obj_t t, float x, float y, float vx, float vy, Texture ss)
+    : type(t), _x(x), _y(y), _vx(vx), _vy(vy), sheet(ss)
 {
 }
 
-Object::Object(const GameInfo &gInfo, obj_t t, int l, int w, int h, SDL_Texture *ss) : gInfo(gInfo), type(t), life(l), _w(w), _h(h), sheet(ss)
+Object::Object(obj_t t, int l, int w, int h, Texture ss) : type(t), life(l), _w(w), _h(h), sheet(ss)
 {
     _x = 200;
     _y = 200;
@@ -60,14 +60,14 @@ void Object::updatePosition()
 {
     updateX();
     updateY();
-    checkBoundaryCollision();
+    // checkBoundaryCollision();
 }
 
-void Object::collisionResponse(obj_t withtype, SDL_Rect overlap_r)
+void Object::collisionResponse(obj_t withtype, ZirconRect overlap_r)
 {
 }
 
-void Object::checkBoundaryCollision()
+void Object::checkBoundaryCollision(const GameInfo &gInfo)
 {
 }
 
@@ -91,7 +91,7 @@ void Object::changeState(const char *nextstate)
     updateSprite(changed);
 }
 
-void Object::addSprite(const char *name, int n, int maxc, int fps, SDL_Rect base_f, SDL_Texture *img)
+void Object::addSprite(const char *name, int n, int maxc, int fps, ZirconRect base_f, Texture img)
 {
     Sprite *s = new Sprite(n, maxc, fps, base_f, img);
     sprites.push_back(s);
@@ -109,7 +109,7 @@ bool Object::initSprites() // can be parsed from a file
     return true;
 }
 
-void Object::hasCollided(obj_t withtype, SDL_Rect overlap_r)
+void Object::hasCollided(obj_t withtype, ZirconRect overlap_r)
 {
     cout << "Collision occured!" << endl;
 }

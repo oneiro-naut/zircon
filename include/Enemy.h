@@ -1,6 +1,7 @@
 #ifndef ENEMY_H
 #define ENEMY_H
 #include "Object.h"
+#include "Timer.h"
 
 class EFireBulletMessage : public Message
 {
@@ -19,15 +20,15 @@ public:
 class Enemy : public Object
 {
 public:
-    Enemy(const GameInfo &gInfo, obj_t t, int l, float x, float y, SDL_Texture *sprt);
+    Enemy(obj_t t, int l, float x, float y, Texture sprt);
     ~Enemy();
-    virtual void hasCollided(obj_t withtype, SDL_Rect overlap_r);
+    virtual void hasCollided(obj_t withtype, ZirconRect overlap_r);
     virtual void update();
+    virtual void checkBoundaryCollision(const GameInfo &gInfo);
 
 protected:
-    Uint32 ebul_timer;
-    virtual void collisionResponse(obj_t withtype, SDL_Rect overlap_r);
-    virtual void checkBoundaryCollision();
+    Timer m_bulletTimer;
+    virtual void collisionResponse(obj_t withtype, ZirconRect overlap_r);
     bool initSprites();
     void fireBullet();
     void updateState();

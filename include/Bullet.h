@@ -8,17 +8,17 @@ class Game;
 class Bullet : public Object
 {
 public:
-    Bullet(const GameInfo &gInfo, obj_t btype, float x, float y, float vx, float vy, SDL_Texture *sprt);
+    Bullet(obj_t btype, float x, float y, float vx, float vy, Texture sprt);
     virtual void update();
     ~Bullet();
-    virtual void hasCollided(obj_t withtype, SDL_Rect overlap_r);
+    virtual void hasCollided(obj_t withtype, ZirconRect overlap_r);
+    virtual void checkBoundaryCollision(const GameInfo &gInfo);
 
 protected:
     bool initSprites();
-    virtual void collisionResponse(obj_t withtype, SDL_Rect overlap_r);
+    virtual void collisionResponse(obj_t withtype, ZirconRect overlap_r);
     void updatePosition();
     void updateState();
-    virtual void checkBoundaryCollision();
 };
 
 #endif

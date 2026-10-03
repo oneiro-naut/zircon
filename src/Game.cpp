@@ -1,34 +1,32 @@
 #include <iostream>
 #include <cstdio>
+#include <algorithm>
 #include <string.h>
 
-#include "Game.h"
 #include "Util.h"
 #include "Renderer.h"
 #include "Object.h"
 #include "Player.h"
 #include "Enemy.h"
 #include "Bullet.h"
-#include "Rectangle.h"
 //#include "Powerup.h"
+#include "Game.h"
 
-Game::Game()
+Game::Game(Window &window, Renderer &renderer) : m_window(window),
+                                                 m_renderer(renderer),
+                                                 m_textureManager(m_renderer.getTextureManager())
 {
-    // player=new Player(*this,10,10,50,50,0,255,0,255,0,0,0,0);
-    over = false;
-    charsheet = nullptr;
-    background = nullptr;
-    g_font = nullptr;
-    renderer = nullptr;
+    m_over = false;
 
     m_inputHandler = std::make_unique<InputHandler>();
+    m_physicsHandler = std::make_unique<PhysicsHandler>();
 
     if (!initGame())
     {
-        over = true;
+        m_over = true;
     }
 
-    if (!over)
+    if (!m_over)
         std::cout << "Created Game" << std::endl;
 }
 
@@ -38,258 +36,110 @@ Game::~Game()
     deleteTextures();
 
     std::cout << "Destroying Game" << std::endl;
-    // Close the font that was used
-    if (g_font)
-        TTF_CloseFont(g_font);
-
-    // Quit SDL_ttf, img, sdl2
-    IMG_Quit();
-    TTF_Quit();
-    SDL_Quit();
 }
 
 void Game::updateScore()
 {
-    score += 5;
-    std::cout << "Current Score = " << score << std::endl;
+    m_score += 5;
+    std::cout << "Current Score = " << m_score << std::endl;
 }
 
-void Game::showGameOver(char *winstat)
+void Game::updateObjectList(std::vector<std::unique_ptr<Object>> &objList)
 {
-    renderer->renderText(winstat, camera.w / 4, camera.h / 4, g_font, textColor);
-}
-
-void Game::updateStatusText()
-{
-    char stat[100] = {0};
-    sprintf(stat, "Life : %d       Score: %d       Wave : %d", player->getLives(), score, wave);
-    renderer->renderText(stat, 0, 0, g_font, textColor);
-}
-
-void Game::updateEnemies()
-{
-    std::vector<Object *>::iterator it;
-    for (it = enemies.begin(); it != enemies.end(); it++)
+    for (auto &obj : objList)
     {
-        if (!(*it)->isAlive())
-        {
-            DELETEOBJ(*it)
-            // std::cout<<"deleted 1 bullet"<<std::endl;
-            it = enemies.erase(it); // returns next valid it
-            if (it == enemies.end())
-            {
-                // std::cout<<"reached end"<<std::endl;
-                break;
-            }
-            // it++; // would it save us? no its undefined behaviour
-        }
-        (*it)->update();
+        obj->update();
     }
+
+    objList.erase(
+        std::remove_if(
+            objList.begin(),
+            objList.end(),
+            [](const auto &obj)
+            {
+                return !obj->isAlive();
+            }),
+        objList.end());
 }
 
 void Game::update()
 {
-    if (over)
+    if (m_over || m_state == State::Paused)
         return;
     delayFramesPerSecond(); // so delay should be here not in draw/render functions
-    // if (state == OVER)
-    // {
-    //     return;
-    // }
-    game_timer = SDL_GetTicks();
 
+    m_gameTimer.updateTick();
+
+    m_physicsHandler->updatePhysics(*m_player,
+                                    m_enemies,
+                                    m_bullets,
+                                    m_ebullets,
+                                    m_powerups,
+                                    m_info);
+    updateObjects();
+
+    // //problem is how do we update collision without the position rect
+    // //maybe with a checkCollision(obj1,obj2) function;
+    updateCollision(); // not your problem anymore discuss this inside Physics Handler :)
+    // updateStatusText();
+}
+
+void Game::updateObjects()
+{
     // //update-player
     updatePlayer();
     // //update-enemies
-    updateEnemies();
+    updateObjectList(m_enemies);
     // //update-bullets
-    updateBullets();
+    updateObjectList(m_bullets);
+    updateObjectList(m_ebullets);
     // //update-powerups
-    // //updatePowerups();
-    // //problem is how do we update collision without the position rect
-    // //maybe with a checkCollision(obj1,obj2) function;
-    updateCollision();
-    updateStatusText();
+    // //updatePowerups(); wtf is a powerup?
 }
 
 void Game::deleteObjects()
 {
-    DELETEOBJ(player)
-    std::vector<Object *>::iterator it;
-    for (it = pbullets.begin(); it != pbullets.end();)
-    {
-        DELETEOBJ(*it)
-        it = pbullets.erase(it);
-    }
-    for (it = ebullets.begin(); it != ebullets.end();)
-    {
-        DELETEOBJ(*it)
-        it = ebullets.erase(it);
-    }
-    for (it = enemies.begin(); it != enemies.end();)
-    {
-        DELETEOBJ(*it)
-        it = enemies.erase(it);
-    }
+    m_enemies.clear();
+    m_bullets.clear();
+    m_ebullets.clear();
+    // no need to delete m_player manually
 }
 
 void Game::endGame()
 {
-    over = true;
+    m_over = true;
 }
 
 void Game::updatePlayer()
 {
-    if (player)
-        player->update();
-}
-
-void Game::updateBullets()
-{
-    updatePBullets();
-    updateEBullets();
-}
-
-void Game::updatePBullets()
-{
-    std::vector<Object *>::iterator it;
-    for (it = pbullets.begin(); it != pbullets.end(); it++)
-    {
-        if (!(*it)->isAlive())
-        {
-            DELETEOBJ(*it)
-            // std::cout<<"deleted 1 bullet"<<std::endl;
-            it = pbullets.erase(it); // returns next valid it
-            if (it == pbullets.end())
-            {
-                // std::cout<<"reached end"<<std::endl;
-                break;
-            }
-            // it++; // would it save us? no its undefined behaviour
-        }
-        (*it)->update();
-    }
-}
-
-void Game::updateEBullets()
-{
-    std::vector<Object *>::iterator it;
-    for (it = ebullets.begin(); it != ebullets.end(); it++)
-    {
-        if (!(*it)->isAlive())
-        {
-            DELETEOBJ(*it)
-            // std::cout<<"deleted 1 bullet"<<std::endl;
-            it = ebullets.erase(it); // returns next valid it
-            if (it == ebullets.end())
-            {
-                // std::cout<<"reached end"<<std::endl;
-                break;
-            }
-            // it++; // would it save us? no its undefined behaviour
-        }
-        (*it)->update();
-    }
+    if (m_player)
+        m_player->update();
 }
 
 void Game::genPBullet(float x, float y)
 {
-    Object *bullet = new Bullet(info, PBULLET, x, y, 6, 0, charsheet);
-    using namespace std::placeholders;
-    bullet->registerCb(std::bind(&Game::onEvent, this, _1));
-    pbullets.push_back(bullet);
+    auto bullet = std::make_unique<Bullet>(PBULLET, x, y, 10, 0, m_charsheet);
+
+    bullet->registerCb(
+        std::bind(&Game::onEvent, this, std::placeholders::_1));
+
+    m_bullets.push_back(std::move(bullet));
 }
 
 void Game::genEBullet(float x, float y)
 {
-    Object *bullet = new Bullet(info, EBULLET, x, y, -6, 0, charsheet);
-    using namespace std::placeholders;
-    bullet->registerCb(std::bind(&Game::onEvent, this, _1));
-    ebullets.push_back(bullet);
-}
+    auto bullet = std::make_unique<Bullet>(EBULLET, x, y, -10, 0, m_charsheet);
 
-SDL_Rect Game::positionObjFrame(Object *o, float scale)
-{
-    SDL_Rect rect = {
-        static_cast<int>(o->getX()),
-        static_cast<int>(o->getY()),
-        static_cast<int>(o->getW() * scale),
-        static_cast<int>(o->getH() * scale)};
+    bullet->registerCb(
+        std::bind(&Game::onEvent, this, std::placeholders::_1));
 
-    return rect;
-}
-
-void Game::checkCollision(Object *obj1, Object *obj2)
-{
-    // more details in copy
-    // we can use dynamic programming here n memoiz some stuff or maybe not
-    SDL_Rect r1 = positionObjFrame(obj1, 1);
-    SDL_Rect r2 = positionObjFrame(obj2, 1); // scale = 1
-
-    SDL_Rect inter = getOverlapRect(r1, r2);
-    int area = 0;
-    area = getRectArea(inter);
-
-    if (area == 0)
-        return; // no collision
-    else if (area > 0)
-    { // collision occured
-        // notify the pair
-        obj1->hasCollided(obj2->getType(), inter);
-        obj2->hasCollided(obj1->getType(), inter);
-    } // we r cool now
+    m_ebullets.push_back(std::move(bullet));
 }
 
 void Game::updateCollision()
 {
-    // use for loops with iterators to iterate thru pairs
-    std::vector<Object *>::iterator it;
-    std::vector<Object *>::iterator iter;
-    // player-enemy pairs
-    for (it = enemies.begin(); it != enemies.end(); it++)
-    {
-        checkCollision(player, *it);
-    }
-    // player-ebullet pairs
-    for (it = ebullets.begin(); it != ebullets.end(); it++)
-    {
-        checkCollision(player, *it);
-    }
-    // enemy-enemy pairs
-    for (it = enemies.begin(); it != enemies.end(); it++)
-    {
-        for (iter = enemies.begin(); iter != enemies.end(); iter++)
-        {
-            if (it != iter)
-            {
-                checkCollision(*iter, *it);
-            }
-        }
-    }
-    // player-powerup pairs
-    for (it = powerups.begin(); it != powerups.end(); it++)
-    {
-        checkCollision(player, *it);
-    }
-    // enemy-pbullet pairs
-    for (it = enemies.begin(); it != enemies.end(); it++)
-    {
-        for (iter = pbullets.begin(); iter != pbullets.end(); iter++)
-        {
-
-            checkCollision(*iter, *it);
-        }
-    }
-    // pbullet-ebullet pairs
-    for (it = pbullets.begin(); it != pbullets.end(); it++)
-    {
-        for (iter = ebullets.begin(); iter != ebullets.end(); iter++)
-        {
-
-            checkCollision(*iter, *it);
-        }
-    }
-
+    m_physicsHandler->handleCollisions(*m_player, m_enemies,
+                                       m_bullets, m_ebullets, m_powerups);
     // sweet ;)
 }
 
@@ -298,112 +148,112 @@ bool Game::checkGameOver()
     char win[50] = "You Win!";
     char lose[50] = "You lose!";
 
-    if (enemies.empty())
+    if (m_enemies.empty())
     {
         endGame();
         std::cout << "You win!" << std::endl;
         std::cout << "Game Over!" << std::endl;
-        showGameOver(win);
+        // showGameOver(win);
     }
-    // testobj->update();
-    if (!player->isAlive())
+
+    if (!m_player->isAlive())
     {
         endGame();
         std::cout << "You lose!" << std::endl;
         std::cout << "Game Over!" << std::endl;
-        showGameOver(lose);
+        // showGameOver(lose);
     }
-    return over;
+    return m_over;
 }
 
-void Game::pollEvents() // i have a 2KRO keyboard :/
+void Game::pollEvents()
 {
-    SDL_Event event;
-    m_inputHandler->updateInput(); // :)
+    m_inputHandler->updateInput(); // :) // now only updates keyboaard input state which was shared with the Object types
+
     if (checkGameOver())
         return;
-    // SDL_PumpEvents(); // update keystate array
 
-    if (SDL_PollEvent(&event))
+    m_inputHandler->pollEvents(m_eventQ);
+
+    // Event Dispatcher single threaded, naive impl
+    // not really a dispatch just event handler is called
+    // probably what dispatch means tho :)
+    bool skipDuplicatePauseEvent = false; // one pause event per frame/game loop iteration :)
+    // current logic might cause dropped events
+    while (!m_eventQ.empty())
     {
-        switch (event.type)
-        {
-        case SDL_KEYDOWN:
+        // const auto &ev = m_eventQ.front();
+        std::visit([this, &skipDuplicatePauseEvent](const auto &event)
+                   {
+            using T = std::decay_t<decltype(event)>;
 
-            switch (event.key.keysym.sym)
+            if constexpr (std::is_same_v<T, ProcessLevelEvent>)
             {
-            case SDLK_ESCAPE:
-                over = true;
-                std::cout << "Closing Game!" << std::endl;
-                over = true;
-                break;
+                // Window object handles these type of events
+                m_window.handleEvent(event);
             }
-            break;
-        case SDL_KEYUP:
-            switch (event.key.keysym.sym)
+            else if constexpr (std::is_same_v<T, SystemKeyPressedEvent>)
             {
-            case SDLK_p:
-                if (state == RUNNING)
+                if (event.key == SystemKey::Esc)
                 {
-                    state = PAUSED;
-                    std::cout << "Game paused" << std::endl;
-                    break;
+                    m_over = true;
+                    std::cout << "Closing Game!" << std::endl;
                 }
-                else if (state == PAUSED)
+                else if (event.key == SystemKey::P && !skipDuplicatePauseEvent)
                 {
-                    state = RUNNING; // resume
-                    std::cout << "Game Running" << std::endl;
-                    break;
+                    if (m_state == State::Running)
+                    {
+                        m_state = State::Paused;
+                        std::cout << "Game paused" << std::endl;
+                    }
+                    else if (m_state == State::Paused)
+                    {
+                        m_state = State::Running; // resume
+                        std::cout << "Game Running" << std::endl;
+                    }
+                    skipDuplicatePauseEvent = true;
                 }
-                break;
-            default:
-                break;
-            }
-            break;
-        }
+            } },
+                   m_eventQ.front());
+        m_eventQ.pop();
     }
-
-    ////////////////////////////cannot press more than 2 normal keys simultaneously unless one of them is a modifier key
-    /////////which are wired and programmed to be pressed alongside some other key
-    // example if i press LEFT RIGHT and hold them then press UP the UP wont be detected until one of RIGHT or LEFT key is released
-    // making space for UP to be detected
-    // this is a hardware limitation
-    // this is the reason why JUMP should never be DONE using UP key
-    // this is the reason why I changed it to LCTRL key which is a modifier
-    // nowadays n-key rollover keyboards are there which do not have this (key-ghosting issue)
-    // key-ghosting:condition in which beyond a limit key sequences become ambiguous or not detected
-
-    // broke multiple key presses into sequence of key presses
-    // every key press changes the state of game
-
-    window->pollEvents(event);
 }
 
 void Game::delayFramesPerSecond()
 {
-    if ((SDL_GetTicks() - game_timer) < (1000 / 30))
-    {
-        SDL_Delay((1000 / 30) - (SDL_GetTicks() - game_timer));
-    }
+    m_gameTimer.delayFPS(30);
 }
 
 void Game::drawBackground()
 {
-    renderer->renderTexture(background, camera, 0, 0, 1);
+    // Experimented with scrolling, find a better way to incorporate this idea :)
+    static int scrollX = 0;
+    if (scrollX < m_camera.w)
+    {
+        scrollX += 1;
+    }
+    else
+    {
+        scrollX = 0; // or whatever the start is
+    }
+    // render 1
+    m_renderer.renderTexture(m_background, m_camera, scrollX, 0, 1);
+    // render 2 ... remaining portion
+    m_renderer.renderTexture(m_background, m_camera, -1 * m_camera.w + scrollX, 0, 1);
 }
 
 void Game::draw()
 {
-    if (over == false)
+    if (m_over == false)
     {
         drawBackground();
         drawObjects();
     }
-    renderer->clear();
+    m_renderer.clear();
 
-    if (over == true)
+    if (m_over == true)
     {
-        SDL_Delay(3000);
+        m_gameTimer.delayMS(3000);
     }
 }
 
@@ -414,21 +264,72 @@ void Game::loadWave()
 
 void Game::spawnEnemyWave()
 {
-    if (enemies.empty() && wave == 0) // init wave 0 test wave
+    if (m_enemies.empty() && m_wave == 0) // init wave 0 test wave
     {
-        enemies.push_back(new Enemy(info, ENEMY, 1, camera.w + 50, 50, charsheet));
-        enemies.push_back(new Enemy(info, ENEMY, 1, camera.w + 50, 100, charsheet));
-        enemies.push_back(new Enemy(info, ENEMY, 1, camera.w + 90, 50, charsheet));
-        enemies.push_back(new Enemy(info, ENEMY, 1, camera.w + 90, 72, charsheet));
-        enemies.push_back(new Enemy(info, ENEMY, 1, camera.w + 130, 50, charsheet));
-        enemies.push_back(new Enemy(info, ENEMY, 1, camera.w + 130, 350, charsheet));
-        enemies.push_back(new Enemy(info, ENEMY, 1, camera.w + 170, 600, charsheet));
-        enemies.push_back(new Enemy(info, ENEMY, 1, camera.w + 170, 400, charsheet));
-        enemies.push_back(new Enemy(info, ENEMY, 1, camera.w + 200, 200, charsheet));
-        enemies.push_back(new Enemy(info, ENEMY, 1, camera.w + 200, 500, charsheet));
+        m_enemies.push_back(
+            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 50, 50, m_charsheet));
+
+        m_enemies.push_back(
+            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 50, 228, m_charsheet));
+
+        m_enemies.push_back(
+            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 90, 356, m_charsheet));
+
+        m_enemies.push_back(
+            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 90, 72, m_charsheet));
+
+        m_enemies.push_back(
+            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 130, 50, m_charsheet));
+
+        m_enemies.push_back(
+            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 130, 484, m_charsheet));
+
+        m_enemies.push_back(
+            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 170, 728, m_charsheet));
+
+        m_enemies.push_back(
+            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 170, 400, m_charsheet));
+
+        m_enemies.push_back(
+            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 200, 200, m_charsheet));
+
+        m_enemies.push_back(
+            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 200, 500, m_charsheet));
+        // loadWave1Enemies();
+
+        m_enemies.push_back(
+            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 400, 50, m_charsheet));
+
+        m_enemies.push_back(
+            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 500, 228, m_charsheet));
+
+        m_enemies.push_back(
+            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 600, 356, m_charsheet));
+
+        m_enemies.push_back(
+            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 900, 72, m_charsheet));
+
+        m_enemies.push_back(
+            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 800, 50, m_charsheet));
+
+        m_enemies.push_back(
+            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 1000, 484, m_charsheet));
+
+        m_enemies.push_back(
+            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 1170, 728, m_charsheet));
+
+        m_enemies.push_back(
+            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 1170, 400, m_charsheet));
+
+        m_enemies.push_back(
+            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 2000, 200, m_charsheet));
+
+        m_enemies.push_back(
+            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 2100, 500, m_charsheet));
         // loadWave1Enemies();
     }
-    for (auto &e : enemies)
+
+    for (auto &e : m_enemies)
     {
         using namespace std::placeholders;
         e->registerCb(std::bind(&Game::onEvent, this, _1));
@@ -437,54 +338,39 @@ void Game::spawnEnemyWave()
 
 void Game::createPlayer()
 {
-    player = new Player(info, PLAYER, 3, 32, 32, charsheet);
+    m_player = std::make_unique<Player>(0, m_info.sceneHeight / 2, PLAYER, 3, 32 * 2, 32 * 2, m_charsheet);
     using namespace std::placeholders;
-    player->registerCb(std::bind(&Game::onEvent, this, _1));
+    m_player->registerCb(std::bind(&Game::onEvent, this, _1));
 }
 
 bool Game::initGame()
 {
-    wave = 0;
-    n_waves = 1;
-    game_timer = SDL_GetTicks(); // global timer initialization
-    message = nullptr;
-    status = createRectangle(0, 0, 500, 30);
-    gameend = createRectangle(WIN_W / 4, WIN_H / 4, 500, 300);
-    state = RUNNING;
-    timer[GLOBAL_TIMER] = SDL_GetTicks();
-    camera = createRectangle(0, 32, WIN_W, WIN_H - 32);
-    if (!SDLInit())
-    {
-        return false;
-    }
-    // keystate = SDL_GetKeyboardState(NULL); // Input
-    Object::registerInput(m_inputHandler->getInputState());
-    info.sceneHeight = camera.h;
-    info.sceneWidth = camera.w;
-    // info.keystate = keystate;
+    m_wave = 0;
+    m_nWaves = 1;
+    m_gameTimer.updateTick();
+    m_state = State::Running;
+    m_camera = createRectangle(0, 32, WIN_W, WIN_H - 32);
 
-    window = new Window("Zircon", WIN_H, WIN_W);
-    if (!window->getWindow())
+    Object::registerInput(m_inputHandler->getInputState());
+    m_info.sceneHeight = m_camera.h;
+    m_info.sceneWidth = m_camera.w;
+
+    if (!m_window.getWindow())
     {
         return false;
     }
-    renderer = new Renderer(window->getWindow(), window->getDefaultScreen());
-    if (!renderer->initComplete())
+    if (!m_renderer.initComplete())
     {
         return false;
     }
     std::cout << "Created renderer" << std::endl;
-    renderer->changeScreen(camera);
+    m_renderer.changeScreen(m_camera);
 
     if (!initTextures())
     {
         return false;
     }
-    if (!loadText())
-    {
-        return false;
-    }
-    // testobj = new Object(*this,PLAYER,1,30,30,charsheet);
+
     createPlayer();
     loadWave();
     std::cout << "Player created" << std::endl;
@@ -493,104 +379,34 @@ bool Game::initGame()
 
 bool Game::initTextures()
 {
-    charsheet = createTexture("assets/newsprtsheet.png");
-    background = createTexture("assets/background.png");
-    return charsheet && background;
+    m_charsheet = m_textureManager.loadTexture("assets/newsprtsheet.png");
+    m_background = m_textureManager.loadTexture("assets/background.png");
+    return m_charsheet.m_handle >= 0 && m_background.m_handle >= 0;
+}
+
+void Game::deleteTextures()
+{
+    m_textureManager.unloadTexture(m_charsheet.m_handle);
+    m_textureManager.unloadTexture(m_charsheet.m_handle);
 }
 
 void Game::drawObjects() // now this is the real mess
 {
     // render player
-    renderer->renderSprite(player->getCurrSprite(), player->getX(), player->getY());
+    m_renderer.renderSprite(m_player->getCurrSprite(), m_player->getX(), m_player->getY());
     // render enemies
-    for (auto &e : enemies)
-        renderer->renderSprite(e->getCurrSprite(), e->getX(), e->getY());
+    for (auto &e : m_enemies)
+        m_renderer.renderSprite(e->getCurrSprite(), e->getX(), e->getY());
     // render bullets
-    for (auto &pb : pbullets)
-        renderer->renderSprite(pb->getCurrSprite(), pb->getX(), pb->getY());
-    for (auto &eb : ebullets)
-        renderer->renderSprite(eb->getCurrSprite(), eb->getX(), eb->getY());
-}
-
-bool Game::loadText()
-{
-    // Open the font
-    textColor = {255, 255, 255};
-    g_font = TTF_OpenFont("assets/fonts/DejaVuSerif.ttf", 10);
-    return g_font != nullptr;
-}
-
-SDL_Texture *Game::loadTexture(const char *image, SDL_Surface *surface)
-{
-    SDL_Texture *texture = NULL;
-
-    if (surface == NULL)
-    {
-        if (image == NULL)
-        {
-            fprintf(stderr, "[%s: %d]Warning: image string NULL\n", __FILE__, __LINE__);
-            return NULL;
-        }
-
-        surface = IMG_Load(image);
-
-        if (surface == NULL)
-        {
-            fprintf(stderr, "[%s: %d]Warning: Could not load image %s into surface, error: %s\n", __FILE__, __LINE__, image, SDL_GetError());
-            return NULL;
-        }
-    }
-
-    texture = renderer->createTexturefromSurface(surface);
-
-    if (texture == NULL)
-    {
-        fprintf(stderr, "[%s: %d]Warning: Could not create texture %s, error: %s\n", __FILE__, __LINE__, image, SDL_GetError());
-    }
-
-    SDL_FreeSurface(surface);
-    return texture;
-}
-
-SDL_Texture *Game::createTexture(std::string path)
-{
-
-    const char *image = path.c_str();
-    SDL_Texture *texture = NULL;
-    SDL_Surface *surface = NULL;
-
-    surface = IMG_Load(image);
-
-    if (surface == NULL)
-    {
-        fprintf(stderr, "[%s: %d]Warning: Could not load image %s into surface, error: %s\n", __FILE__, __LINE__, image, SDL_GetError());
-        return NULL;
-    }
-
-    if (SDL_SetColorKey(surface, SDL_TRUE, SDL_MapRGB(surface->format, 0x0, 0x0, 0x0)))
-    {
-        fprintf(stderr, "[%s: %d]Warning: Could not set color key for image %s, error: %s\n", __FILE__, __LINE__, image, SDL_GetError());
-        return NULL;
-    }
-
-    texture = loadTexture(image, surface);
-
-    if (texture == NULL)
-    {
-        fprintf(stderr, "[%s: %d]Warning: Could not create textureBack %s, error: %s\n", __FILE__, __LINE__, image, SDL_GetError());
-    }
-
-    return texture;
-}
-
-void Game::deleteTextures()
-{
-    SDL_DestroyTexture(charsheet);
+    for (auto &pb : m_bullets)
+        m_renderer.renderSprite(pb->getCurrSprite(), pb->getX(), pb->getY());
+    for (auto &eb : m_ebullets)
+        m_renderer.renderSprite(eb->getCurrSprite(), eb->getX(), eb->getY());
 }
 
 int Game::run()
 {
-    while (!isOver() && !window->isClosed())
+    while (!isOver() && !m_window.isClosed())
     {
         pollEvents();
         update();
@@ -599,28 +415,7 @@ int Game::run()
     return 0;
 }
 
-bool Game::SDLInit()
-{
-    if (SDL_Init(SDL_INIT_VIDEO) != 0)
-    {
-        std::cerr << "Failed to initialize SDL." << std::endl;
-        return false; // means it failed
-    }
-
-    if (IMG_Init(IMG_INIT_PNG) != IMG_INIT_PNG)
-    {
-        std::cerr << "Failed to initilize SDL_image." << std::endl;
-        return false;
-    }
-    // Initialize SDL_ttf
-    if (TTF_Init() == -1)
-    {
-        return false;
-    }
-
-    return true;
-}
-
+// smells like shit, improve this, but this is smart shit
 void Game::onEvent(Message *msg)
 {
     // switch case to call specific Handler

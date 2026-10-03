@@ -2,7 +2,7 @@
 #include <iostream>
 // I HATE Static variables
 
-Window::Window(const std::string &title, int height, int width) : _title(title), _height(height), _width(width)
+Window::Window(const std::string &title, int width, int height) : _title(title), _height(height), _width(width)
 {
     _closed = false;
     default_screen = {0, 0, _width, _height}; // will be passed to renderer then Game obj will change it
@@ -32,26 +32,12 @@ Window::~Window()
     SDL_DestroyWindow(_window);
 }
 
-void Window::pollEvents(SDL_Event event)
+void Window::handleEvent(const ProcessLevelEvent &event)
 {
-
-    switch (event.type)
+    if (event.closed)
     {
-    case SDL_QUIT:
         _closed = true;
         std::cout << "Closing window!" << std::endl;
-        break;
-    case SDL_MOUSEMOTION:
-        // std::cout<<event.motion.x<<","<<event.motion.y<<std::endl;
-        break;
-    case SDL_MOUSEBUTTONDOWN:
-        // std::cout<<"Mouse clicked!"<<std::endl;
-        break;
-    case SDL_MOUSEBUTTONUP:
-        // std::cout<<"Mouse botton released!"<<std::endl;
-        break;
-    default:
-        break;
     }
 }
 

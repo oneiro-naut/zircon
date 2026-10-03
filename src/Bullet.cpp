@@ -1,11 +1,11 @@
 #include "Bullet.h"
 #include <iostream>
-Bullet::Bullet(const GameInfo &gInfo, obj_t btype, float x, float y, float vx, float vy, SDL_Texture *sprt)
-    : Object(gInfo, btype, x, y, vx, vy, sprt)
+Bullet::Bullet(obj_t btype, float x, float y, float vx, float vy, Texture sprt)
+    : Object(btype, x, y, vx, vy, sprt)
 {
     life = 1;
-    _w = 16;
-    _h = 16;
+    _w = 16 * 2;
+    _h = 16 * 2;
     _ax = 0;
     _ay = 0;
     // alive = true;
@@ -17,9 +17,9 @@ Bullet::Bullet(const GameInfo &gInfo, obj_t btype, float x, float y, float vx, f
 
 bool Bullet::initSprites() // can be parsed from a file
 {
-    SDL_Rect alivep = {32, 144, 16, 16}; // can store these offsets in a file to parse
-    SDL_Rect alivee = {32, 144, 16, 16};
-    SDL_Rect hitb = {96, 144, 16, 16};
+    ZirconRect alivep = {32, 144, 16, 16}; // can store these offsets in a file to parse
+    ZirconRect alivee = {32, 144, 16, 16};
+    ZirconRect hitb = {96, 144, 16, 16};
     // sdl rect up sdl rect down...
     state = "alive";
     if (type == PBULLET)
@@ -40,7 +40,7 @@ void Bullet::update()
         return;
     }
 
-    updatePosition();
+    // updatePosition();
     updateSpriteFrame();
     updateState();
 }
@@ -49,10 +49,10 @@ void Bullet::updatePosition()
 {
     updateX();
     updateY();
-    checkBoundaryCollision(); // can kill it
+    // checkBoundaryCollision(); // can kill it
 }
 
-void Bullet::collisionResponse(obj_t withtype, SDL_Rect overlap_r)
+void Bullet::collisionResponse(obj_t withtype, ZirconRect overlap_r)
 {
 
     switch (withtype)
@@ -97,7 +97,7 @@ void Bullet::updateState()
     }
 }
 
-void Bullet::checkBoundaryCollision()
+void Bullet::checkBoundaryCollision(const GameInfo &gInfo)
 {
     if (_x < 0)
     {
@@ -127,7 +127,7 @@ void Bullet::checkBoundaryCollision()
     }
 }
 
-void Bullet::hasCollided(obj_t withtype, SDL_Rect overlap_r)
+void Bullet::hasCollided(obj_t withtype, ZirconRect overlap_r)
 {
     collisionResponse(withtype, overlap_r);
 }

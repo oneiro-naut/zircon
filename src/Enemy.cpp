@@ -1,20 +1,20 @@
 #include "Enemy.h"
 #include <iostream>
 
-Enemy::Enemy(const GameInfo &gInfo, obj_t t, int l, float x, float y, SDL_Texture *sprt) : Object(gInfo, t, l, sprt)
+Enemy::Enemy(obj_t t, int l, float x, float y, Texture sprt) : Object(t, l, sprt), m_bulletTimer(5000)
 {
 
     // shield = false;
-    _vx = -1;
+    _vx = -5;
     _vy = 0;
     _x = x;
     _y = y;
-    _w = 32;
-    _h = 32;
+    _w = 32 * 2; // should roughly match sprite width, height
+    _h = 32 * 2;
     _ax = 0;
     _ay = 0;
     // alive = true;
-    ebul_timer = 0;
+    // ebul_timer = 0;
 
     if (!initSprites())
     {
@@ -28,8 +28,7 @@ Enemy::~Enemy()
 
 bool Enemy::initSprites() // can be parsed from a file
 {
-
-    SDL_Rect idle = {192, 64, 32, 32}; // can store these offsets in a file to parse
+    ZirconRect idle = {192, 64, 32, 32}; // can store these offsets in a file to parse
     // sdl rect up sdl rect down...
     state = "idle";
     addSprite(state, 4, -1, 10, idle, sheet);
@@ -42,10 +41,11 @@ bool Enemy::initSprites() // can be parsed from a file
 void Enemy::fireBullet()
 {
 
-    if (ebul_timer == 0 || SDL_GetTicks() > ebul_timer)
+    // if (ebul_timer == 0 || SDL_GetTicks() > ebul_timer)
+    if (m_bulletTimer.updateTickOnTimeout())
     {
-        ebul_timer = SDL_GetTicks() + 2000; // bullet generation delay in ms
-        // cout<<"enemy y = "<<_y<<"bullet y = "<<_y+(curr_frame.h/4)<<endl;
+        // ebul_timer = SDL_GetTicks() + 5000; // bullet generation delay in ms
+        //  cout<<"enemy y = "<<_y<<"bullet y = "<<_y+(curr_frame.h/4)<<endl;
         EFireBulletMessage emsg(_x, _y, _w, _h);
         dispatchEvent(&emsg); // game.onEvent(&emsg)
         // changeState("fire");
@@ -59,7 +59,7 @@ void Enemy::update()
         return;
     }
     fireBullet();
-    updatePosition();
+    // updatePosition();
     updateSpriteFrame();
     updateState();
 }
@@ -69,7 +69,7 @@ void Enemy::updatePosition()
 
     updateX();
     updateY();
-    checkBoundaryCollision();
+    // checkBoundaryCollision();
 }
 
 // bool Enemy::shielded()
@@ -99,7 +99,7 @@ void Enemy::updatePosition()
 //     shield = true;
 // }
 
-void Enemy::collisionResponse(obj_t withtype, SDL_Rect overlap_r)
+void Enemy::collisionResponse(obj_t withtype, ZirconRect overlap_r)
 {
     switch (withtype)
     {
@@ -123,7 +123,7 @@ void Enemy::updateState()
     }
 }
 
-void Enemy::checkBoundaryCollision()
+void Enemy::checkBoundaryCollision(const GameInfo &gInfo)
 {
     if (_x < 0)
     {
@@ -145,7 +145,7 @@ void Enemy::checkBoundaryCollision()
     }
 }
 
-void Enemy::hasCollided(obj_t withtype, SDL_Rect overlap_r)
+void Enemy::hasCollided(obj_t withtype, ZirconRect overlap_r)
 {
     collisionResponse(withtype, overlap_r);
 }

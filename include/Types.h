@@ -1,6 +1,7 @@
 #ifndef TYPES_H
 #define TYPES_H
-#include <SDL2/SDL.h>
+
+// Remove Bullshit types from here
 
 typedef enum obj_t
 {
@@ -12,7 +13,7 @@ typedef enum obj_t
     EBULLET,
     SIZE
 
-} obj_t;
+} obj_t; // f ed up naming by me :), this is not fing C its C++
 
 typedef enum
 {

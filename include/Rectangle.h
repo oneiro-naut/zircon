@@ -3,9 +3,15 @@
 
 #include <SDL2/SDL.h>
 
+typedef struct ZirconRect
+{
+    int x, y;
+    int w, h;
+} ZirconRect;
+
 // sorry but no class shit here /// ok
-SDL_Rect createRectangle(int x, int y, int w, int h);
-int inline getRectArea(SDL_Rect r) { return r.w * r.h; };
-SDL_Rect getOverlapRect(SDL_Rect r1, SDL_Rect r2);
+ZirconRect createRectangle(int x, int y, int w, int h);
+int inline getRectArea(ZirconRect r) { return r.w * r.h; };
+ZirconRect getOverlapRect(ZirconRect r1, ZirconRect r2);
 
 #endif

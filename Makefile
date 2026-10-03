@@ -9,7 +9,7 @@ LIBDIR=lib
 
 CFLAGS=-I$(IDIR)
 LDFLAGS=-lm -lSDL2 -lSDL2_image -lSDL2_ttf
-DBGFLAGS=-g -Wall
+DBGFLAGS=-g -Wall -std=c++17
 
 SRC = $(wildcard $(SRCDIR)/*.cpp)
 OBJ = $(SRC:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)

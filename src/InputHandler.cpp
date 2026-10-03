@@ -20,3 +20,8 @@ const InputState *InputHandler::getInputState() const
 {
     return &m_inputState;
 }
+
+void InputHandler::pollEvents(std::queue<Event> &eventQ)
+{
+    m_impl->pollEvents(eventQ);
+}

@@ -2,11 +2,15 @@
 #include <iostream>
 using namespace std;
 
-Sprite::Sprite(int n, int c, int fps, SDL_Rect base, SDL_Texture *img) : N_FRAMES(n), MAX_COUNT(c), FPS(fps), BASE_FRAME(base), IMG(img)
+Sprite::Sprite(int n, int c, int fps,
+               ZirconRect base,
+               Texture img) : m_totalFrames(n), m_maxLoopCount(c), m_fps(fps),
+                              m_baseFrame(base), m_img(img)
 {
-    _OVER = false;
-    CUR_FRAME = BASE_FRAME;
-    CLOCK = 0;
+    m_over = false;
+    m_currFrame = m_baseFrame;
+    m_clock.setTimeout(1000 / m_fps);
+    m_clock.reset();
 }
 
 Sprite::~Sprite()
@@ -15,17 +19,10 @@ Sprite::~Sprite()
 
 void Sprite::update()
 {
-    if (CLOCK <= SDL_GetTicks())
+    if (m_clock.updateTickOnTimeout())
     {
-        updateClock();
-        updateFrame();
+        updateFrame(); // may or may not reset the CLOCK
     }
-}
-
-void Sprite::updateClock()
-{
-    // cout << FPS<<endl;
-    CLOCK = SDL_GetTicks() + 1000 / FPS;
 }
 
 void Sprite::stop()
@@ -35,49 +32,42 @@ void Sprite::stop()
 
 void Sprite::reset()
 {
-    // cout << "sprite was reset" << endl;
-    CUR_FRAME = BASE_FRAME;
-    FRAME_COUNT = 1;
-    COUNT = 0;
-    CLOCK = 0;
-    _OVER = false;
+    m_currFrame = m_baseFrame;
+    m_frameCount = 1;
+    m_loopCount = 0;
+    m_clock.reset();
+    m_over = false;
 }
 
 void Sprite::updateFrame()
 {
-    if (_OVER == true)
+    if (m_over == true)
         return;
 
-    if (FRAME_COUNT >= N_FRAMES)
+    if (m_frameCount >= m_totalFrames)
     {
-        COUNT++;
-        if (MAX_COUNT == -1)
-            FRAME_COUNT = 1; // cylic
-        else if (MAX_COUNT > 0)
+        m_loopCount++;
+        if (m_maxLoopCount == -1)
+            m_frameCount = 1; // cylic
+        else if (m_maxLoopCount > 0)
         {
-            if (COUNT >= MAX_COUNT)
+            if (m_loopCount >= m_maxLoopCount)
             {
-                _OVER = true;
+                m_over = true;
                 reset();
             }
-            FRAME_COUNT = 1;
+            m_frameCount = 1;
         }
-        CUR_FRAME = BASE_FRAME;
+        m_currFrame = m_baseFrame;
     }
     else
     {
-        FRAME_COUNT += 1;
-        // cout<<"frame count is = "<<FRAME_COUNT<<endl;
-        CUR_FRAME.x += CUR_FRAME.w;
+        m_frameCount++;
+        m_currFrame.x += m_currFrame.w;
     }
 }
 
-SDL_Rect Sprite::getCurrentFrame()
+ZirconRect Sprite::getCurrentFrame()
 {
-    return CUR_FRAME;
-}
-
-SDL_Texture *Sprite::getTexture()
-{
-    return IMG;
+    return m_currFrame;
 }

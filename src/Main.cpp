@@ -1,7 +1,7 @@
-#include "Game.h"
+#include "Application.h"
 
 int main(int argc, char *argv[])
 {
-    Game game;
-    return game.run();
+    Application app;
+    return app.run();
 }

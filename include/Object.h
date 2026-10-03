@@ -8,13 +8,18 @@
 #include "Types.h"
 #include "Sprite.h"
 #include "InputTypes.h"
+#include "Texture.h"
+#include "Rectangle.h"
 
+// This class is bloated :)
+// And currently there is no logic layer and state machine decoupling
+// Logic should be as a "Hardcoded" version of what we think of as Scripting in game engines
 class Object
 {
 public:
-    Object(const GameInfo &gInfo, obj_t t, int l, int w, int h, SDL_Texture *ss);
-    Object(const GameInfo &gInfo, obj_t t, int l, SDL_Texture *sprt);
-    Object(const GameInfo &gInfo, obj_t t, float x, float y, float vx, float vy, SDL_Texture *ss);
+    Object(obj_t t, int l, int w, int h, Texture ss);
+    Object(obj_t t, int l, Texture sprt);
+    Object(obj_t t, float x, float y, float vx, float vy, Texture ss);
     virtual ~Object();
     bool inline isAlive() { return (life > 0); }
     obj_t inline getType() { return type; }
@@ -27,18 +32,25 @@ public:
     float inline getvY() { return _vy; };
     float inline getaX() { return _ax; };
     float inline getaY() { return _ay; };
+    inline void setvX(float vx) { _vx = vx; }
+    inline void setvY(float vy) { _vy = vy; }
+    inline void setaX(float ax) { _ax = ax; }
+    inline void setaY(float ay) { _ay = ay; }
+    inline void setY(float y) { _y = y; }
+    inline void setX(float x) { _x = x; }
+
     inline Sprite *getCurrSprite() { return curSprite; }
     virtual void update();
     virtual void updatePosition();
     void registerCb(std::function<void(Message *)> cb);
-    virtual void hasCollided(obj_t withtype, SDL_Rect overlap_r); // could have passed a special collision struct containing details about collision but its fine for now
+    virtual void hasCollided(obj_t withtype, ZirconRect overlap_r); // could have passed a special collision struct containing details about collision but its fine for now
+    virtual void checkBoundaryCollision(const GameInfo &gInfo);
 
     static void registerInput(const InputState *gameInputState);
 
 protected:
-    const GameInfo &gInfo;
     static const InputState *m_inputState;
-    SDL_Texture *sheet;
+    Texture sheet;
     obj_t type;
     // bool alive;
     // bool tangible;
@@ -66,19 +78,12 @@ protected:
     virtual bool initSprites();
     void updateSprite(bool change);
     void updateSpriteFrame();
-    void addSprite(const char *name, int n, int maxc, int fps, SDL_Rect base_f, SDL_Texture *img);
+    void addSprite(const char *name, int n, int maxc, int fps, ZirconRect base_f, Texture img);
     void updateX() { _x = _x + _vx; }
     void updateY() { _y = _y + _vy; }
     void updatevX() { _vx = _vx + _ax; }
     void updatevY() { _vy = _vy + _ay; }
-    void setvX(float vx) { _vx = vx; }
-    void setvY(float vy) { _vy = vy; }
-    void setaX(float ax) { _ax = ax; }
-    void setaY(float ay) { _ay = ay; }
-    void setY(float y) { _y = y; }
-    void setX(float x) { _x = x; }
     // virtual SDL_Rect getNextFrame();
-    virtual void checkBoundaryCollision();
-    virtual void collisionResponse(obj_t withtype, SDL_Rect overlap_r);
+    virtual void collisionResponse(obj_t withtype, ZirconRect overlap_r);
 };
 #endif
