@@ -1,19 +1,17 @@
 #include "Player.h"
 #include <iostream>
 
-Player::Player(float x, float y, obj_t t, int l, int w, int h, Texture sprt) : Object(t, l, w, h, sprt), m_bulletTimer(200), m_shieldTimer(5000)
+Player::Player(float x, float y, float vx, float vy, obj_t t, int l, int w, int h, Texture sprt) : Object(t, l, w, h, sprt), m_bulletTimer(200), m_shieldTimer(5000)
 {
-    // pbul_timer = 0;
-    // shield_timer = 0;
-    //  type = PLAYER;
     m_shield = false;
     _x = x;
     _y = y;
     _vx = 0;
     _vy = 0;
+    m_maxVx = vx;
+    m_maxVy = vy;
     _ax = 0;
     _ay = 0;
-    // alive = true;
     if (!initSprites())
     {
         life = 0;
@@ -26,10 +24,8 @@ Player::~Player()
 
 bool Player::initSprites() // can be parsed from a file
 {
-
     ZirconRect idle = {192, 32, 32, 32}; // can store these offsets in a file to parse
     ZirconRect sh = {320, 32, 32, 32};
-    // sdl rect up sdl rect down...
     state = "idle";
     addSprite(state, 4, -1, 10, idle, sheet);
     addSprite("shield", 4, -1, 10, sh, sheet);
@@ -43,27 +39,25 @@ void Player::updateByKey()
     setvY(0);
     if (m_inputState->keyState[enumClassindex(Key::Down)] == 1)
     {
-        _vy += 15;
+        _vy += m_maxVy;
     }
     if (m_inputState->keyState[enumClassindex(Key::Up)] == 1)
     {
-        _vy += -15;
+        _vy += -m_maxVy;
     }
     if (m_inputState->keyState[enumClassindex(Key::Right)] == 1)
     {
-        _vx += 15;
+        _vx += m_maxVx;
     }
     if (m_inputState->keyState[enumClassindex(Key::Left)] == 1)
     {
-        _vx += -15;
+        _vx += -m_maxVx;
     }
     if (m_inputState->keyState[enumClassindex(Key::Space)] == 1) // not suitable for this tap like event where holding does not make sense you press it once to one bullet
     {
         fireBullet();
-        // changeState(FIRE);
         return;
     }
-    // changeState(IDLE);
 }
 
 void Player::update()
@@ -73,27 +67,15 @@ void Player::update()
         return;
     }
     updateByKey();
-    // updatePosition();
     updateShield();
     updateSpriteFrame();
     updateState();
 }
 
-void Player::updatePosition()
-{
-    updateX();
-    updateY();
-    // checkBoundaryCollision();
-}
-
 void Player::fireBullet()
 {
-
-    // if (pbul_timer == 0 || SDL_GetTicks() > pbul_timer)
     if (m_bulletTimer.updateTickOnTimeout())
     {
-        // pbul_timer = SDL_GetTicks() + 200; // bullet generation delay in ms
-
         PFireBulletMessage pfbMsg(_x, _y, _w, _h);
         dispatchEvent(&pfbMsg);
     }
@@ -110,7 +92,6 @@ bool Player::shielded()
     {
         if (m_shieldTimer.resetTickOnTimeout()) // shield timer started
         {
-            // shield_timer = SDL_GetTicks() + 5000; // 5s shield
             m_shield = false;
             changeState("idle");
             std::cout << "Shield deactivated!" << std::endl;
@@ -129,7 +110,6 @@ void Player::activateShield()
 
 void Player::collisionResponse(obj_t withtype, ZirconRect overlap_r)
 {
-
     switch (withtype)
     {
     case EBULLET:
@@ -164,7 +144,6 @@ void Player::checkBoundaryCollision(const GameInfo &gInfo)
     if (_x + _w > gInfo.sceneWidth)
     {
         setX(gInfo.sceneWidth - _w);
-        // state = DEAD;
     }
     if (_y < 0)
     {

@@ -10,6 +10,8 @@
 #include "InputHandler.h"
 #include "PhysicsHandler.h"
 #include "TextureManager.h"
+#include "AssetManager.h"
+#include "LevelManager.h"
 #include "Timer.h"
 #include "Rectangle.h"
 
@@ -38,6 +40,7 @@ private:
     std::unique_ptr<InputHandler> m_inputHandler{nullptr};
     std::queue<Event> m_eventQ;
     std::unique_ptr<PhysicsHandler> m_physicsHandler{nullptr};
+    AssetManager m_assetManager;
 
     // Redundant now
     GameInfo m_info;
@@ -71,6 +74,8 @@ private:
     // all sprite-data here /// Can be wrapped into a GameData class,
     Texture m_charsheet;  // tileset1, character texture layer
     Texture m_background; // main texture onto which everything is else rendered
+
+    std::unordered_map<std::string, Texture> m_textureMap;
 
     void delayFramesPerSecond();
 
@@ -125,7 +130,7 @@ private:
     // void createBullet
     void genBullet(float x, float y);
     void spawnEnemy();
-    void createPlayer();
+    void createPlayer(const ObjectCtx &objCtx);
 
     // Destroy Game Objects
     void freeObjects();

@@ -14,10 +14,10 @@
 
 Game::Game(Window &window, Renderer &renderer) : m_window(window),
                                                  m_renderer(renderer),
-                                                 m_textureManager(m_renderer.getTextureManager())
+                                                 m_textureManager(m_renderer.getTextureManager()),
+                                                 m_assetManager("assets/asset.config")
 {
     m_over = false;
-
     m_inputHandler = std::make_unique<InputHandler>();
     m_physicsHandler = std::make_unique<PhysicsHandler>();
 
@@ -259,74 +259,19 @@ void Game::draw()
 
 void Game::loadWave()
 {
-    spawnEnemyWave();
-}
-
-void Game::spawnEnemyWave()
-{
-    if (m_enemies.empty() && m_wave == 0) // init wave 0 test wave
+    LevelLoader levelLoader("assets/level.config");
+    const auto &objCreationCtx = levelLoader.getObjectCreationCtx();
+    for (const auto &objCtx : objCreationCtx.objects)
     {
-        m_enemies.push_back(
-            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 50, 50, m_charsheet));
-
-        m_enemies.push_back(
-            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 50, 228, m_charsheet));
-
-        m_enemies.push_back(
-            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 90, 356, m_charsheet));
-
-        m_enemies.push_back(
-            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 90, 72, m_charsheet));
-
-        m_enemies.push_back(
-            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 130, 50, m_charsheet));
-
-        m_enemies.push_back(
-            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 130, 484, m_charsheet));
-
-        m_enemies.push_back(
-            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 170, 728, m_charsheet));
-
-        m_enemies.push_back(
-            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 170, 400, m_charsheet));
-
-        m_enemies.push_back(
-            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 200, 200, m_charsheet));
-
-        m_enemies.push_back(
-            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 200, 500, m_charsheet));
-        // loadWave1Enemies();
-
-        m_enemies.push_back(
-            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 400, 50, m_charsheet));
-
-        m_enemies.push_back(
-            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 500, 228, m_charsheet));
-
-        m_enemies.push_back(
-            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 600, 356, m_charsheet));
-
-        m_enemies.push_back(
-            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 900, 72, m_charsheet));
-
-        m_enemies.push_back(
-            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 800, 50, m_charsheet));
-
-        m_enemies.push_back(
-            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 1000, 484, m_charsheet));
-
-        m_enemies.push_back(
-            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 1170, 728, m_charsheet));
-
-        m_enemies.push_back(
-            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 1170, 400, m_charsheet));
-
-        m_enemies.push_back(
-            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 2000, 200, m_charsheet));
-
-        m_enemies.push_back(
-            std::make_unique<Enemy>(ENEMY, 1, m_camera.w + 2100, 500, m_charsheet));
-        // loadWave1Enemies();
+        if (objCtx.type == "PLAYER")
+        {
+            createPlayer(objCtx);
+        }
+        else if (objCtx.type == "ENEMY")
+        {
+            m_enemies.push_back(
+                std::make_unique<Enemy>(ENEMY, objCtx.life, objCtx.x, objCtx.y, objCtx.vx, objCtx.vy, m_textureMap[objCtx.textureId]));
+        }
     }
 
     for (auto &e : m_enemies)
@@ -334,11 +279,19 @@ void Game::spawnEnemyWave()
         using namespace std::placeholders;
         e->registerCb(std::bind(&Game::onEvent, this, _1));
     }
+
+    // spawnEnemyWave();
 }
 
-void Game::createPlayer()
+void Game::spawnEnemyWave()
 {
-    m_player = std::make_unique<Player>(0, m_info.sceneHeight / 2, PLAYER, 3, 32 * 2, 32 * 2, m_charsheet);
+}
+
+void Game::createPlayer(const ObjectCtx &objCtx)
+{
+    if (m_player != nullptr)
+        return;
+    m_player = std::make_unique<Player>(objCtx.x, objCtx.y, objCtx.vx, objCtx.vy, PLAYER, objCtx.life, 32 * 2, 32 * 2, m_textureMap[objCtx.textureId]);
     using namespace std::placeholders;
     m_player->registerCb(std::bind(&Game::onEvent, this, _1));
 }
@@ -371,7 +324,6 @@ bool Game::initGame()
         return false;
     }
 
-    createPlayer();
     loadWave();
     std::cout << "Player created" << std::endl;
     return true;
@@ -379,8 +331,24 @@ bool Game::initGame()
 
 bool Game::initTextures()
 {
-    m_charsheet = m_textureManager.loadTexture("assets/newsprtsheet.png");
-    m_background = m_textureManager.loadTexture("assets/background.png");
+    const auto &assetCtx = m_assetManager.getAssetContext();
+    for (const auto &asset : assetCtx.assets)
+    {
+        if (asset.role == "TEXTURE_BG")
+        {
+            m_background = m_textureManager.loadTexture(asset.path);
+            m_background.m_id = asset.id;
+            m_textureMap[asset.id] = m_background;
+        }
+        else if (asset.role == "TEXTURE_SPRITESHEET")
+        {
+            m_charsheet = m_textureManager.loadTexture(asset.path);
+            m_charsheet.m_id = asset.id;
+            m_textureMap[asset.id] = m_charsheet;
+        }
+    }
+    // m_charsheet = m_textureManager.loadTexture("assets/newsprtsheet.png");
+    // m_background = m_textureManager.loadTexture("assets/background.png");
     return m_charsheet.m_handle >= 0 && m_background.m_handle >= 0;
 }
 

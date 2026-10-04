@@ -58,6 +58,7 @@ protected:
     int life;
     float _x, _y;   // these will be static_cast<int>()-ed
     float _vx, _vy; //
+    float m_maxVx, m_maxVy;
     float _ax, _ay; //
     // an enum called STATE since I wont be using maps for this purpose
     // not defining here since plain enums have no forward declaration capability

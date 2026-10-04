@@ -13,7 +13,7 @@ public:
 class Player : public Object
 {
 public:
-    Player(float x, float y, obj_t t, int l, int w, int h, Texture sprt);
+    Player(float x, float y, float vx, float vy, obj_t t, int l, int w, int h, Texture sprt);
     ~Player();
     virtual void update();
 
@@ -32,7 +32,7 @@ protected:
 
     void updateState();
     void updateByKey();
-    void updatePosition();
+    // void updatePosition();
     void updateShield();
     void updateSprite(bool change);
 

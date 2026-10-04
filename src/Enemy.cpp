@@ -1,12 +1,12 @@
 #include "Enemy.h"
 #include <iostream>
 
-Enemy::Enemy(obj_t t, int l, float x, float y, Texture sprt) : Object(t, l, sprt), m_bulletTimer(5000)
+Enemy::Enemy(obj_t t, int l, float x, float y, float vx, float vy, Texture sprt) : Object(t, l, sprt), m_bulletTimer(5000)
 {
 
     // shield = false;
-    _vx = -5;
-    _vy = 0;
+    _vx = vx; // -5
+    _vy = vy;
     _x = x;
     _y = y;
     _w = 32 * 2; // should roughly match sprite width, height

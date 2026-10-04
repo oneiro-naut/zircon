@@ -20,7 +20,7 @@ public:
 class Enemy : public Object
 {
 public:
-    Enemy(obj_t t, int l, float x, float y, Texture sprt);
+    Enemy(obj_t t, int l, float x, float y, float vx, float vy, Texture sprt);
     ~Enemy();
     virtual void hasCollided(obj_t withtype, ZirconRect overlap_r);
     virtual void update();
